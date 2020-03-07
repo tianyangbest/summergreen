@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 # Author: Steven Field
 
-from joinquant import *
+from joinquant.joinquant import JoinQuant
