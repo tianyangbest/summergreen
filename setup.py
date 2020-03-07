@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name="summergreen",
-    version="0.0.3",
+    version="0.0.4",
     author="Steven Field",
     packages=["summergreen"],
 )
