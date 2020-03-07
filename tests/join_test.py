@@ -3,5 +3,4 @@
 
 import summergreen
 
-jq = summergreen.joinquant.JoinQuant()
-jq.example()
+summergreen.JoinQuant().example()
