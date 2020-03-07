@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 # Author: Steven Field
 
-from .tt import *
+from .joinquant import *
