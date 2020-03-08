@@ -8,7 +8,11 @@ import os
 
 def merge_from_csvs2parquet(code, csv_source_dir, parquet_target_dir):
     print(f'{code} start to process!')
-    df = dd.read_csv([f'{csv_source_dir}{f}' for f in os.listdir(csv_source_dir) if code in f]).compute()
+    file_list = [f'{csv_source_dir}{f}' for f in os.listdir(csv_source_dir) if code in f and f.endswith('.csv')]
+    if len(file_list) <= 0:
+        print(f'{code} no related csv files!')
+        return
+    df = dd.read_csv(file_list).compute()
     if df.shape[0] > 0:
         df = df.astype({
             "time": "int",
