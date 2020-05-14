@@ -4,6 +4,7 @@
 import re
 import time
 from . import basequotation
+import datetime
 
 
 class Sina(basequotation.BaseQuotation):
@@ -34,7 +35,7 @@ class Sina(basequotation.BaseQuotation):
         stock_dict = dict()
         for stock_match_object in result:
             stock = stock_match_object.groups()
-            stock_dict[(stock[0], stock[31]+' '+stock[32])] = dict(
+            stock_dict[(int(stock[0]), datetime.datetime.strptime(stock[31]+' '+stock[32], '%Y-%m-%d %H:%M:%S'))] = dict(
                 current=float(stock[4]),
                 high=float(stock[5]),
                 low=float(stock[6]),

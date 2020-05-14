@@ -28,9 +28,6 @@ class BaseQuotation(metaclass=abc.ABCMeta):
         self._session = requests.session()
         stock_codes = self.load_stock_codes()
         self.stock_list = self.gen_stock_list(stock_codes)
-        stock_a_codes = [i for i in stock_codes if
-                         i.startswith(('000', '001', '002', '003', '300', '600', '601', '603', '688'))]
-        self.stock_a_list = self.gen_stock_list(stock_a_codes)
 
     def gen_stock_list(self, stock_codes):
         stock_with_exchange_list = self._gen_stock_prefix(stock_codes)
@@ -96,13 +93,6 @@ class BaseQuotation(metaclass=abc.ABCMeta):
              key start with sh/sz market flag
         """
         return self.get_stock_data(self.stock_list, prefix=prefix)
-
-    def market_a_snapshot(self, prefix=False):
-        """return A stock market quotation snapshot
-        :param prefix: if prefix is True, return quotation dict's  stock_code
-             key start with sh/sz market flag
-        """
-        return self.get_stock_data(self.stock_a_list, prefix=prefix)
 
     def get_stocks_by_range(self, params):
         headers = {

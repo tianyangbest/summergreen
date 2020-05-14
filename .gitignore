@@ -215,3 +215,27 @@ dmypy.json
 
 data/
 .vscode/
+/.idea/
+/dask-worker-space/
+Untitled.ipynb
+Untitled1.ipynb
+Untitled10.ipynb
+Untitled2-Copy1.ipynb
+Untitled2.ipynb
+Untitled3.ipynb
+Untitled4.ipynb
+Untitled5.ipynb
+Untitled6.ipynb
+Untitled7.ipynb
+Untitled8.ipynb
+Untitled9.ipynb
+dask-worker-space/
+log.txt
+mystream.png
+nohup.out
+sinacsv2tmp-addition.ipynb
+sinacsv2tmp.ipynb
+tmp2level1-Copy1.ipynb
+tmp2level1-cudf.ipynb
+tmp2level1-dask.ipynb
+tmp2level1.ipynb

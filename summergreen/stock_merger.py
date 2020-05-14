@@ -12,7 +12,7 @@ class StockMerger(object):
     def __init__(self, trade_date):
         self.trade_date = trade_date
         self.is_trading = True
-        self.cut_off_time = self.trade_date + datetime.timedelta(hours=9)
+        self.cut_off_time = self.trade_date
         self.shift_timedelta = datetime.timedelta(seconds=15)
         self.ordered_columns = [
             "current", "high", "low", "volume", "money",
@@ -32,7 +32,7 @@ class StockMerger(object):
     def stock_dict2tmp_dict(self, stock_dict):
         stock_df = pd.DataFrame.from_dict(stock_dict, orient='index')
         tmp_df = pd.concat([self.tmp_df, stock_df])
-        tmp_df = tmp_df[(tmp_df.index.map(lambda x: x[1] >= self.cut_off_time)) & (tmp_df.current > 0)]
+        tmp_df = tmp_df[tmp_df.index.map(lambda x: x[1] >= self.cut_off_time)]
         tmp_df = tmp_df.loc[~tmp_df.index.duplicated(keep='first')]
         tmp_df.index = pd.MultiIndex.from_tuples(tmp_df.index)
         self.tmp_df = tmp_df
