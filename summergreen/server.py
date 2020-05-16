@@ -7,6 +7,7 @@ import atexit
 import quotation
 from stock_merger import StockMerger
 import datetime
+import threading
 
 app = Flask(__name__)
 
@@ -21,10 +22,15 @@ def initialize():
     quotation.update_stock_codes()
     app.trade_date = datetime.datetime.now().date()
     app.sm = StockMerger(app.trade_date)
+    threading.Thread(target=run_tmp_merger, daemon=True).start()
 
 
 def run_fetcher():
-    app.sm.stock_dict2tmp_dict(app.fetcher.market_snapshot())
+    app.sm.cache_stock_dict(app.fetcher.market_snapshot())
+
+
+def run_tmp_merger():
+    app.sm.stock_dict2tmp_dict()
 
 
 def run_merger():
@@ -43,22 +49,37 @@ def server_check():
 
 @app.route('/get_stock_data', methods=['GET', 'POST'])
 def get_stock_data():
-    return jsonify({'message': f'{app.sm.tmp_df.shape}|||{app.sm.persistent_cdf.shape}'})
+    return jsonify({'message': f'{app.sm.stock_queue.qsize()}|||{app.sm.persistent_cdf.shape}'})
 
 
 # initialize scheduler
 app.sched.add_job(initialize, 'cron',
                   hour='9', minute='14', max_instances=1)
 
+app.sched.add_job(run_fetcher, 'cron',
+                  max_instances=10, second='*')
+
 # fetcher scheduler
 app.sched.add_job(run_fetcher, 'cron',
-                  hour='9', minute='15-59', max_instances=1, second='*')
+                  hour='9', minute='15-59', max_instances=10, second='*')
 app.sched.add_job(run_fetcher, 'cron',
-                  hour='10,13-14', max_instances=1, second='*')
+                  hour='10,13-14', max_instances=10, second='*')
 app.sched.add_job(run_fetcher, 'cron',
-                  hour='11', minute='0-31', max_instances=1, second='*')
+                  hour='11', minute='0-31', max_instances=10, second='*')
 app.sched.add_job(run_fetcher, 'cron',
-                  hour='15', minute='0', max_instances=1, second='*')
+                  hour='15', minute='0', max_instances=10, second='*')
+
+threading.Thread(target=run_tmp_merger, daemon=True).start()
+
+# # tmp merger scheduler
+# app.sched.add_job(run_tmp_merger, 'cron',
+#                   hour='9', minute='15-59', max_instances=1, second='*')
+# app.sched.add_job(run_tmp_merger, 'cron',
+#                   hour='10,13-14', max_instances=1, second='*')
+# app.sched.add_job(run_tmp_merger, 'cron',
+#                   hour='11', minute='0-31', max_instances=1, second='*')
+# app.sched.add_job(run_tmp_merger, 'cron',
+#                   hour='15', minute='0', max_instances=1, second='*')
 
 # merger scheduler
 app.sched.add_job(run_merger, 'cron',

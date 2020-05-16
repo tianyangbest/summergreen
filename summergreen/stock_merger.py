@@ -4,7 +4,8 @@
 import cudf
 import datetime
 import pandas as pd
-
+from queue import Queue
+import threading
 cudf.set_allocator("managed")
 
 
@@ -23,19 +24,30 @@ class StockMerger(object):
         self.persistent_cdf = cudf.DataFrame(columns=self.ordered_index + self.ordered_columns)
         self.persistent_cdf = self.persistent_cdf.set_index(self.ordered_index)
         self.tmp_df = pd.DataFrame(columns=self.ordered_columns)
+        self.stock_queue = Queue()
+        # self.tmp_merge_threader = threading.Thread(target=self.stock_dict2tmp_dict, daemon=True)
+        # self.tmp_merge_threader.start()
 
     def estimate_trading(self, stock_dict):
         trade_date_list = list(set([i[1].date() for i in stock_dict.keys()]))
         if self.trade_date.date() not in trade_date_list:
             self.is_trading = False
 
-    def stock_dict2tmp_dict(self, stock_dict):
-        stock_df = pd.DataFrame.from_dict(stock_dict, orient='index')
-        tmp_df = pd.concat([self.tmp_df, stock_df])
-        tmp_df = tmp_df[tmp_df.index.map(lambda x: x[1] >= self.cut_off_time)]
-        tmp_df = tmp_df.loc[~tmp_df.index.duplicated(keep='first')]
-        tmp_df.index = pd.MultiIndex.from_tuples(tmp_df.index)
-        self.tmp_df = tmp_df
+    def cache_stock_dict(self, stock_dict):
+        self.stock_queue.put(stock_dict)
+
+    def stock_dict2tmp_dict(self):
+        while True:
+            try:
+                stock_df_list = [self.tmp_df, pd.DataFrame.from_dict(self.stock_queue.get(), orient='index')]
+                tmp_df = pd.concat(stock_df_list)
+                tmp_df = tmp_df[tmp_df.index.map(lambda x: x[1] >= self.cut_off_time)]
+                tmp_df = tmp_df.loc[~tmp_df.index.duplicated(keep='first')]
+                tmp_df.index = pd.MultiIndex.from_tuples(tmp_df.index)
+                self.tmp_df = tmp_df
+                self.stock_queue.task_done()
+            except Exception as e:
+                print(e)
 
     def tmp2persistent_delayed(self):
         tmp_df = self.tmp_df.copy()
