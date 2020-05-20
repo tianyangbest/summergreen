@@ -5,42 +5,61 @@ import cudf
 import datetime
 import pandas as pd
 from queue import Queue
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
+import quotation
+import threading
 
 cudf.set_allocator("managed")
 
 
 class StockMerger(object):
-    def __init__(self, trade_date):
-        self.trade_date = trade_date
-        self.cut_off_time = self.trade_date
-        self.shift_timedelta = datetime.timedelta(seconds=15)
+    def __init__(self, parquet_target_dir):
         self.ordered_columns = [
             "current", "high", "low", "volume", "money",
             "a1_p", "a2_p", "a3_p", "a4_p", "a5_p", "a1_v", "a2_v", "a3_v", "a4_v", "a5_v",
             "b1_p", "b2_p", "b3_p", "b4_p", "b5_p", "b1_v", "b2_v", "b3_v", "b4_v", "b5_v",
         ]
         self.ordered_index = ['code', 'time']
+        self.parquet_target_dir = parquet_target_dir
+        self.shift_timedelta = datetime.timedelta(seconds=15)
+
+        self.stock_scheduler = BackgroundScheduler()
+        self.stock_queue = Queue()
+        self.stock_threading = threading.Thread(target=self.stock_dict2tmp_dict, daemon=True)
+        self.set_merger_plan()
+
+        # shut down the scheduler when exiting the app
+        atexit.register(lambda: self.stop_merger_plan)
+
+    def initialize_one_day_job(self, trade_date):
+        quotation.update_stock_codes()
+        self.fetcher = quotation.Sina()
+        self.trade_date = trade_date
+        self.cut_off_time = self.trade_date
         self.persistent_cdf = cudf.DataFrame(columns=self.ordered_index + self.ordered_columns)
         self.persistent_cdf = self.persistent_cdf.set_index(self.ordered_index)
         self.tmp_df = pd.DataFrame(columns=self.ordered_columns)
-        self.stock_queue = Queue()
 
-    def estimate_trading(self, stock_dict):
+
+    def estimate_trading(self):
         """
         Get snapshot of stock and determine if is trading today.
         :rtype: Boolean
-        :param stock_dict: stock dict snapshot
         """
+        stock_dict = self.fetcher.market_snapshot()
         trade_date_list = list(set([i[1].date() for i in stock_dict.keys()]))
         if self.trade_date not in trade_date_list:
             return False
         else:
             return True
 
-    def cache_stock_dict(self, stock_dict):
+    def cache_stock_dict(self):
         """
         Get a snapshot of stock by fetcher to stock queue
         """
+        print(f"""start to cache stock dict:{datetime.datetime.now()}""")
+        stock_dict = self.fetcher.market_snapshot()
         self.stock_queue.put(stock_dict)
 
     def stock_dict2tmp_dict(self):
@@ -70,16 +89,49 @@ class StockMerger(object):
         self.persistent_cdf = cudf.concat([self.persistent_cdf, tmp_cdf])
         self.cut_off_time = cut_off_time
 
-    def tmp2persistent(self):
+    def save_persistent2parquet(self):
         """
-        merge tmp_df to tmp_cdf
+        save the tmp_cdf to parquet_path
         """
         tmp_cdf = cudf.from_pandas(self.tmp_df)
         self.persistent_cdf = cudf.concat([self.persistent_cdf, tmp_cdf])
         self.tmp_df = pd.DataFrame(columns=self.ordered_columns)
+        self.persistent_cdf.to_parquet(f"{self.parquet_target_dir}/{self.trade_date}.parquet")
 
-    def save_persistent2parquet(self, parquet_path):
-        """
-        save the tmp_cdf to parquet_path
-        """
-        self.persistent_cdf.to_parquet(parquet_path)
+    def set_merger_plan(self):
+        # self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
+        #                              max_instances=10, second='*')
+        # self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
+        #                              max_instances=1, second='*/30')
+
+        # fetcher scheduler
+        self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
+                                     hour='9', minute='15-59', max_instances=10, second='*')
+        self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
+                                     hour='10,13-14', max_instances=10, second='*')
+        self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
+                                     hour='11', minute='0-31', max_instances=10, second='*')
+        self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
+                                     hour='15', minute='0', max_instances=10, second='*')
+
+        # merger scheduler
+        self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
+                                     hour='9', minute='15-59', max_instances=1, second='*/30')
+        self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
+                                     hour='10,13-14', max_instances=1, second='*/30')
+        self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
+                                     hour='11', minute='0-30', max_instances=1, second='*/30')
+        self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
+                                     hour='15', minute='0', max_instances=1, second='*/30')
+
+        # save scheduler
+        self.stock_scheduler.add_job(self.save_persistent2parquet, 'cron',
+                                     hour='15', minute='1', max_instances=1, second='30')
+
+    def start_plan(self):
+        self.stock_threading.start()
+        self.stock_scheduler.start()
+
+    def stop_merger_plan(self):
+        self.stock_scheduler.shutdown()
+        self.stock_threading.join()
