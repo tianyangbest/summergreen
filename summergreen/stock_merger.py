@@ -112,10 +112,10 @@ class StockMerger(object):
         print(f"""finished to save cudf at {datetime.datetime.now()}""")
 
     def set_merger_plan(self):
-        self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
-                                     max_instances=10, second='*')
-        self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
-                                     max_instances=1, second='*/30')
+        # self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
+        #                              max_instances=10, second='*')
+        # self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
+        #                              max_instances=1, second='*/30')
 
         # fetcher scheduler
         self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
