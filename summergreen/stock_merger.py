@@ -30,7 +30,7 @@ class StockMerger(object):
         self.set_merger_plan()
 
         # shut down the scheduler when exiting the app
-        atexit.register(lambda: self.stop_merger_plan)
+        atexit.register(lambda: self.stop_plan)
 
     def initialize_one_day_job(self, trade_date):
         print(f"""started initialize_one_day_job at {datetime.datetime.now()}""")
@@ -48,6 +48,7 @@ class StockMerger(object):
         else:
             print("plan is already running")
         print(f"""finished initialize_one_day_job at {datetime.datetime.now()}""")
+        self.estimate_trading()
 
     def estimate_trading(self):
         """
@@ -56,10 +57,10 @@ class StockMerger(object):
         """
         stock_dict = self.fetcher.market_snapshot()
         trade_date_list = list(set([i[1].date() for i in stock_dict.keys()]))
+        print(trade_date_list)
         if self.trade_date not in trade_date_list:
-            return False
-        else:
-            return True
+            print('start pause.................')
+            self.pause_plan()
 
     def cache_stock_dict(self):
         """
@@ -142,17 +143,22 @@ class StockMerger(object):
                                      hour='15', minute='1', max_instances=1, second='30')
 
     def start_plan(self):
-        self.stock_threading.start()
-        self.stock_scheduler.start()
+        try:
+            self.stock_threading.start()
+            self.stock_scheduler.start()
+        except Exception as e:
+            print(e)
 
     def pause_plan(self):
-        if self.stock_scheduler.state == 2:
-            print("plan already paused.")
-        elif self.stock_scheduler.state == 0:
-            print("plan already stopped")
-        else:
+        try:
             self.stock_scheduler.pause()
+        except Exception as e:
+            print(e)
 
-    def stop_merger_plan(self):
-        self.stock_scheduler.shutdown()
-        self.stock_threading.join()
+    def stop_plan(self):
+        try:
+            self.stock_scheduler.shutdown()
+            self.stock_threading.join()
+        except Exception as e:
+            print(e)
+

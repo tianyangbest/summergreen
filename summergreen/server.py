@@ -11,7 +11,6 @@ import atexit
 app = Flask(__name__)
 app.sm = StockMerger("/mnt/stock_data/tmp_cudf/")
 app.sm.initialize_one_day_job(datetime.datetime.now().date())
-app.sm.start_plan()
 
 app.bs = BackgroundScheduler()
 app.bs.add_job(app.sm.initialize_one_day_job, 'cron', hour='9', minute='14', max_instances=1, second='30',
