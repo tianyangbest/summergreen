@@ -33,6 +33,7 @@ class StockMerger(object):
         atexit.register(lambda: self.stop_merger_plan)
 
     def initialize_one_day_job(self, trade_date):
+        print(f"""started initialize_one_day_job at {datetime.datetime.now()}""")
         quotation.update_stock_codes()
         self.fetcher = quotation.Sina()
         self.trade_date = trade_date
@@ -40,7 +41,13 @@ class StockMerger(object):
         self.persistent_cdf = cudf.DataFrame(columns=self.ordered_index + self.ordered_columns)
         self.persistent_cdf = self.persistent_cdf.set_index(self.ordered_index)
         self.tmp_df = pd.DataFrame(columns=self.ordered_columns)
-
+        if self.stock_scheduler.state == 2:
+            self.stock_scheduler.resume()
+        elif self.stock_scheduler.state == 0:
+            print("plan is already stopped")
+        else:
+            print("plan is already running")
+        print(f"""finished initialize_one_day_job at {datetime.datetime.now()}""")
 
     def estimate_trading(self):
         """
@@ -58,9 +65,10 @@ class StockMerger(object):
         """
         Get a snapshot of stock by fetcher to stock queue
         """
-        print(f"""start to cache stock dict:{datetime.datetime.now()}""")
+        print(f"""started cache stock dict at {datetime.datetime.now()}""")
         stock_dict = self.fetcher.market_snapshot()
         self.stock_queue.put(stock_dict)
+        print(f"""finished cache stock dict at {datetime.datetime.now()}""")
 
     def stock_dict2tmp_dict(self):
         """
@@ -68,6 +76,7 @@ class StockMerger(object):
         """
         while True:
             try:
+                print(f"""started cache to tmp_df stock dict at {datetime.datetime.now()}""")
                 stock_df_list = [self.tmp_df, pd.DataFrame.from_dict(self.stock_queue.get(), orient='index')]
                 tmp_df = pd.concat(stock_df_list)
                 tmp_df = tmp_df[tmp_df.index.map(lambda x: x[1] >= self.cut_off_time)]
@@ -75,6 +84,7 @@ class StockMerger(object):
                 tmp_df.index = pd.MultiIndex.from_tuples(tmp_df.index)
                 self.tmp_df = tmp_df
                 self.stock_queue.task_done()
+                print(f"""finished cache to tmp_df stock dict at {datetime.datetime.now()}""")
             except Exception as e:
                 print(e)
 
@@ -82,27 +92,30 @@ class StockMerger(object):
         """
         Merge tmp_df to cudf frame and update cut off time
         """
+        print(f"""started tmp_df to cudf at {datetime.datetime.now()}""")
         tmp_df = self.tmp_df.copy()
         cut_off_time = tmp_df.index.map(lambda x: x[1]).max() - self.shift_timedelta
         tmp_df = tmp_df[tmp_df.index.map(lambda x: x[1] < cut_off_time)]
         tmp_cdf = cudf.from_pandas(tmp_df)
         self.persistent_cdf = cudf.concat([self.persistent_cdf, tmp_cdf])
         self.cut_off_time = cut_off_time
+        print(f"""finished tmp_df to cudf at {datetime.datetime.now()}""")
 
     def save_persistent2parquet(self):
         """
         save the tmp_cdf to parquet_path
         """
+        print(f"""started to save cudf at {datetime.datetime.now()}""")
         tmp_cdf = cudf.from_pandas(self.tmp_df)
         self.persistent_cdf = cudf.concat([self.persistent_cdf, tmp_cdf])
-        self.tmp_df = pd.DataFrame(columns=self.ordered_columns)
         self.persistent_cdf.to_parquet(f"{self.parquet_target_dir}/{self.trade_date}.parquet")
+        print(f"""finished to save cudf at {datetime.datetime.now()}""")
 
     def set_merger_plan(self):
-        # self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
-        #                              max_instances=10, second='*')
-        # self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
-        #                              max_instances=1, second='*/30')
+        self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
+                                     max_instances=10, second='*')
+        self.stock_scheduler.add_job(self.tmp2persistent_delayed, 'cron',
+                                     max_instances=1, second='*/30')
 
         # fetcher scheduler
         self.stock_scheduler.add_job(self.cache_stock_dict, 'cron',
@@ -131,6 +144,14 @@ class StockMerger(object):
     def start_plan(self):
         self.stock_threading.start()
         self.stock_scheduler.start()
+
+    def pause_plan(self):
+        if self.stock_scheduler.state == 2:
+            print("plan already paused.")
+        elif self.stock_scheduler.state == 0:
+            print("plan already stopped")
+        else:
+            self.stock_scheduler.pause()
 
     def stop_merger_plan(self):
         self.stock_scheduler.shutdown()
