@@ -32,8 +32,6 @@ def get_stock_info():
          'scheduler state': f'{app.sm.stock_scheduler.state}'
          }
     )
-    # app.sm.initialize_one_day_job(datetime.datetime.now().date())
-    # app.sm.save_persistent2parquet()
     return res
 
 
@@ -47,8 +45,6 @@ def pause_plan():
          'scheduler state': f'{app.sm.stock_scheduler.state}'
          }
     )
-    # app.sm.initialize_one_day_job(datetime.datetime.now().date())
-    # app.sm.save_persistent2parquet()
     return res
 
 
@@ -62,8 +58,6 @@ def initialize_one_day_job():
          'scheduler state': f'{app.sm.stock_scheduler.state}'
          }
     )
-    # app.sm.initialize_one_day_job(datetime.datetime.now().date())
-    # app.sm.save_persistent2parquet()
     return res
 
 
