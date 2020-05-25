@@ -12,16 +12,12 @@ class Sina(basequotation.BaseQuotation):
 
     max_num = 800
     grep_detail = re.compile(
-        r"(\d+)=[^\s]([^\s,]+?)%s%s"
-        % (r",([\.\d]+)" * 29, r",([-\.\d:]+)" * 2)
+        r"(\d+)=[^\s]([^\s,]+?)%s%s" % (r",([\.\d]+)" * 29, r",([-\.\d:]+)" * 2)
     )
     grep_detail_with_prefix = re.compile(
-        r"(\w{2}\d+)=[^\s]([^\s,]+?)%s%s"
-        % (r",([\.\d]+)" * 29, r",([-\.\d:]+)" * 2)
+        r"(\w{2}\d+)=[^\s]([^\s,]+?)%s%s" % (r",([\.\d]+)" * 29, r",([-\.\d:]+)" * 2)
     )
-    del_null_data_stock = re.compile(
-        r"(\w{2}\d+)=\"\";"
-    )
+    del_null_data_stock = re.compile(r"(\w{2}\d+)=\"\";")
 
     @property
     def stock_api(self) -> str:
@@ -29,13 +25,20 @@ class Sina(basequotation.BaseQuotation):
 
     def format_response_data(self, rep_data, prefix=False):
         stocks_detail = "".join(rep_data)
-        stocks_detail = self.del_null_data_stock.sub('', stocks_detail)
+        stocks_detail = self.del_null_data_stock.sub("", stocks_detail)
         grep_str = self.grep_detail_with_prefix if prefix else self.grep_detail
         result = grep_str.finditer(stocks_detail)
         stock_dict = dict()
         for stock_match_object in result:
             stock = stock_match_object.groups()
-            stock_dict[(int(stock[0]), datetime.datetime.strptime(stock[31]+' '+stock[32], '%Y-%m-%d %H:%M:%S'))] = dict(
+            stock_dict[
+                (
+                    int(stock[0]),
+                    datetime.datetime.strptime(
+                        stock[31] + " " + stock[32], "%Y-%m-%d %H:%M:%S"
+                    ),
+                )
+            ] = dict(
                 current=float(stock[4]),
                 high=float(stock[5]),
                 low=float(stock[6]),

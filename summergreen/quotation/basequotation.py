@@ -41,17 +41,12 @@ class BaseQuotation(metaclass=abc.ABCMeta):
         for range_start in range(request_num):
             num_start = self.max_num * range_start
             num_end = self.max_num * (range_start + 1)
-            request_list = ",".join(
-                stock_with_exchange_list[num_start:num_end]
-            )
+            request_list = ",".join(stock_with_exchange_list[num_start:num_end])
             stock_list.append(request_list)
         return stock_list
 
     def _gen_stock_prefix(self, stock_codes):
-        return [
-            helpers.get_stock_type(code) + code[-6:]
-            for code in stock_codes
-        ]
+        return [helpers.get_stock_type(code) + code[-6:] for code in stock_codes]
 
     @staticmethod
     def load_stock_codes():
@@ -120,7 +115,7 @@ class BaseQuotation(metaclass=abc.ABCMeta):
             res = pool.map(self.get_stocks_by_range, stock_list)
         finally:
             pool.close()
-        return [re.sub(r'\s', "", d) for d in res if d is not None]
+        return [re.sub(r"\s", "", d) for d in res if d is not None]
 
     def format_response_data(self, rep_data, **kwargs):
         pass
