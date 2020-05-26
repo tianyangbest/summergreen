@@ -3,75 +3,48 @@
 
 from flask import Flask
 from flask import jsonify
-from stock_merger import StockMerger
 from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 import atexit
+import summerquotation
+import redis
 
 app = Flask(__name__)
-app.sm = StockMerger("/mnt/stock_data/tmp_cudf/")
-app.sm.initialize_one_day_job(datetime.datetime.now().date())
+r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+sq = summerquotation.use("sina")
+
+
+def snap2redis():
+    try:
+        snap_pipe = r.pipeline()
+        snap = sq.market_snapshot()
+        for k, v in snap.items():
+            snap_pipe.hset("stock_tick_current_day", k, v)
+        snap_pipe.execute()
+    except Exception as e:
+        print(e)
+
 
 app.bs = BackgroundScheduler()
-app.bs.add_job(
-    app.sm.initialize_one_day_job,
-    "cron",
-    hour="9",
-    minute="14",
-    max_instances=1,
-    second="30",
-    args=[datetime.datetime.now().date()],
-)
+
+app.bs.add_job(summerquotation.update_stock_codes, 'cron', hour='9', minute='14', max_instances=1, second='30')
+app.bs.add_job(snap2redis, 'cron',
+               hour='9', minute='15-59', max_instances=10, second='*')
+app.bs.add_job(snap2redis, 'cron',
+               hour='10,13-14', max_instances=10, second='*')
+app.bs.add_job(snap2redis, 'cron',
+               hour='11', minute='0-31', max_instances=10, second='*')
+app.bs.add_job(snap2redis, 'cron',
+               hour='15', minute='0', max_instances=10, second='*')
 
 
-@app.route("/server_check", methods=["GET", "POST"])
+@app.route('/server_check', methods=['GET', 'POST'])
 def server_check():
-    return jsonify({"message": "Server is running now!!!"})
+    return jsonify({'message': 'Server is running now!!!'})
 
 
-@app.route("/get_stock_info", methods=["GET", "POST"])
-def get_stock_info():
-    res = jsonify(
-        {
-            "tmp_df shape": f"{app.sm.tmp_df.shape}:{app.sm.tmp_df.index.map(lambda x: x[1]).max()}",
-            "persistent_cdf shape": f"{app.sm.persistent_cdf.shape}",
-            "stock_queue shape": f"{app.sm.stock_queue.qsize()}",
-            "scheduler state": f"{app.sm.stock_scheduler.state}",
-        }
-    )
-    return res
-
-
-@app.route("/pause_plan", methods=["GET", "POST"])
-def pause_plan():
-    app.sm.pause_plan()
-    res = jsonify(
-        {
-            "tmp_df shape": f"{app.sm.tmp_df.shape}:{app.sm.tmp_df.index.map(lambda x: x[1]).max()}",
-            "persistent_cdf shape": f"{app.sm.persistent_cdf.shape}",
-            "stock_queue shape": f"{app.sm.stock_queue.qsize()}",
-            "scheduler state": f"{app.sm.stock_scheduler.state}",
-        }
-    )
-    return res
-
-
-@app.route("/initialize_one_day_job", methods=["GET", "POST"])
-def initialize_one_day_job():
-    app.sm.initialize_one_day_job(datetime.datetime.now().date())
-    res = jsonify(
-        {
-            "tmp_df shape": f"{app.sm.tmp_df.shape}:{app.sm.tmp_df.index.map(lambda x: x[1]).max()}",
-            "persistent_cdf shape": f"{app.sm.persistent_cdf.shape}",
-            "stock_queue shape": f"{app.sm.stock_queue.qsize()}",
-            "scheduler state": f"{app.sm.stock_scheduler.state}",
-        }
-    )
-    return res
-
-
-if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=5001)
+if __name__ == '__main__':
+    app.run(debug=False, host='0.0.0.0', port=5001)
 
     # shut down the scheduler when exiting the app
     atexit.register(lambda: app.bs.shutdown())

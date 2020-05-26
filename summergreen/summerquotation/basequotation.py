@@ -1,20 +1,18 @@
-# -*- coding: utf-8 -*-
-# Author: Steven Field
-
 # coding:utf8
 import abc
 import json
 import multiprocessing.pool
 import warnings
+
 import requests
-import re
+
 from . import helpers
 
 
 class BaseQuotation(metaclass=abc.ABCMeta):
     """行情获取基类"""
 
-    max_num = 1000  # 每次请求的最大股票数
+    max_num = 800  # 每次请求的最大股票数
 
     @property
     @abc.abstractmethod
@@ -37,16 +35,17 @@ class BaseQuotation(metaclass=abc.ABCMeta):
             return [request_list]
 
         stock_list = []
-        request_num = len(stock_codes) // (self.max_num + 1) + 1
-        for range_start in range(request_num):
-            num_start = self.max_num * range_start
-            num_end = self.max_num * (range_start + 1)
-            request_list = ",".join(stock_with_exchange_list[num_start:num_end])
+        for i in range(0, len(stock_codes), self.max_num):
+            request_list = ",".join(
+                stock_with_exchange_list[i : i + self.max_num]
+            )
             stock_list.append(request_list)
         return stock_list
 
     def _gen_stock_prefix(self, stock_codes):
-        return [helpers.get_stock_type(code) + code[-6:] for code in stock_codes]
+        return [
+            helpers.get_stock_type(code) + code[-6:] for code in stock_codes
+        ]
 
     @staticmethod
     def load_stock_codes():
@@ -105,7 +104,6 @@ class BaseQuotation(metaclass=abc.ABCMeta):
     def get_stock_data(self, stock_list, **kwargs):
         """获取并格式化股票信息"""
         res = self._fetch_stock_data(stock_list)
-
         return self.format_response_data(res, **kwargs)
 
     def _fetch_stock_data(self, stock_list):
@@ -115,7 +113,7 @@ class BaseQuotation(metaclass=abc.ABCMeta):
             res = pool.map(self.get_stocks_by_range, stock_list)
         finally:
             pool.close()
-        return [re.sub(r"\s", "", d) for d in res if d is not None]
+        return [d for d in res if d is not None]
 
     def format_response_data(self, rep_data, **kwargs):
         pass
