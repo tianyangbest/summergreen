@@ -4,7 +4,6 @@
 from flask import Flask
 from flask import jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
-import datetime
 import atexit
 import summerquotation
 import redis
@@ -25,17 +24,19 @@ def snap2redis():
         print(e)
 
 
-app.bs = BackgroundScheduler()
+bs = BackgroundScheduler()
 
-app.bs.add_job(summerquotation.update_stock_codes, 'cron', hour='9', minute='14', max_instances=1, second='30')
-app.bs.add_job(snap2redis, 'cron',
-               hour='9', minute='15-59', max_instances=10, second='*')
-app.bs.add_job(snap2redis, 'cron',
-               hour='10,13-14', max_instances=10, second='*')
-app.bs.add_job(snap2redis, 'cron',
-               hour='11', minute='0-31', max_instances=10, second='*')
-app.bs.add_job(snap2redis, 'cron',
-               hour='15', minute='0', max_instances=10, second='*')
+bs.add_job(summerquotation.update_stock_codes, 'cron', hour='9', minute='14', max_instances=1, second='30')
+bs.add_job(snap2redis, 'cron',
+           hour='9', minute='15-59', max_instances=10, second='*')
+bs.add_job(snap2redis, 'cron',
+           hour='10,13-14', max_instances=10, second='*')
+bs.add_job(snap2redis, 'cron',
+           hour='11', minute='0-31', max_instances=10, second='*')
+bs.add_job(snap2redis, 'cron',
+           hour='15', minute='0', max_instances=10, second='*')
+
+bs.start()
 
 
 @app.route('/server_check', methods=['GET', 'POST'])
@@ -45,6 +46,6 @@ def server_check():
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=5001)
-
+    bs.start()
     # shut down the scheduler when exiting the app
-    atexit.register(lambda: app.bs.shutdown())
+    atexit.register(lambda: bs.shutdown())
