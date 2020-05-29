@@ -1,7 +1,6 @@
 # coding:utf8
 import re
 import time
-
 from . import basequotation
 
 

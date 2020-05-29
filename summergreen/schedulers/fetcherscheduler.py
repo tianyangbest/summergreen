@@ -10,7 +10,7 @@ class FetcherScheduler:
         self.sf = sinastockfetcher.SinaStockFetcher(redis_host="localhost",
                                                     redis_port=6379,
                                                     redis_db=0,
-                                                    parquet_dir="/mnt/stock_data/tmp_cudf/", )
+                                                    parquet_dir="/mnt/stock_data/stock_tick_current_day/", )
         self.bs = BackgroundScheduler()
 
         self.bs.add_job(self.sf.day_initialization, 'cron', hour='9', minute='14', max_instances=1, second='30')

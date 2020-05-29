@@ -29,7 +29,6 @@ class SinaStockFetcher:
 
     def snap2redis(self):
         try:
-            print("start to fetch.")
             snap_pipe = self.r.pipeline()
             snap = self.sq.market_snapshot()
             for k, v in snap.items():
