@@ -33,7 +33,7 @@ class Sina(basequotation.BaseQuotation):
         stock_dict = dict()
         for stock_match_object in result:
             stock = stock_match_object.groups()
-            stock_dict[f"""{stock[0]}#{stock[31]} {stock[32]}"""] = """,""".join([str(i) for i in [
+            stock_dict[(f"""{stock[0]}""", f"""{stock[31]} {stock[32]}""")] = """,""".join([str(i) for i in [
                 stock[4],
                 stock[5],
                 stock[6],
