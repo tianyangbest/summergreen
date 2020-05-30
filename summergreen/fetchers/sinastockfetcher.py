@@ -17,6 +17,7 @@ class SinaStockFetcher:
         self.parquet_dir = parquet_dir
         self.r = redis.Redis(host=redis_host, port=redis_port, db=redis_db, decode_responses=True)
         self.today = datetime.datetime.now().date()
+        self.today_str = self.today.strftime("%Y-%m-%d")
         self.sq = quotation.use("sina")
         with open(f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.json""") as f:
             self.stock_config = json.load(f)
@@ -25,13 +26,15 @@ class SinaStockFetcher:
         quotation.update_stock_codes()
         self.r.flushdb(self.redis_db)
         self.today = datetime.datetime.now().date()
+        self.today_str = self.today.strftime("%Y-%m-%d")
 
     def snap2redis(self):
         try:
             snap_pipe = self.r.pipeline()
             snap = self.sq.market_snapshot()
             for k, v in snap.items():
-                snap_pipe.hset(k[1], k[0], v)
+                if k[1][:10] == self.today_str:
+                    snap_pipe.hset(k[1], k[0], v)
             snap_pipe.execute()
         except Exception as e:
             print(e)
