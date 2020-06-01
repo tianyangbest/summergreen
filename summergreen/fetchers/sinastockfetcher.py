@@ -44,7 +44,7 @@ class SinaStockFetcher:
                       self.r.keys(f"{self.today}*")]
         redis_list = list(itertools.chain(*redis_list))
         df = pd.DataFrame(redis_list)
-        df.columns = self.stock_config['sina_columns']
+        df.columns = list(self.stock_config['sina_datatype'].keys())
         df = df.astype(self.stock_config['sina_datatype'])
         df = df.set_index(['code', 'time'])
         df.to_parquet(f"""{self.parquet_dir}/{self.today}.parquet""")
