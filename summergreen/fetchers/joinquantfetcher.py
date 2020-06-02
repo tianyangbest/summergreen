@@ -16,7 +16,7 @@ def joinquant_csv2parquet(csv_source_dir, parquet_dir, date_str):
     df['code'] = df.code.map(lambda x: x.split(".")[0])
     with open(f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.json""") as f:
         sina_datatype = json.load(f)["sina_datatype"]
-        sina_columns = json.load(f)["sina_columns"]
+        sina_columns = list(sina_datatype.keys())
     df = df[sina_columns]
     df = df.astype(sina_datatype)
     df = df.set_index(["code", "time"])
