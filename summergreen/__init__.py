@@ -3,3 +3,4 @@
 
 from .fetchers import *
 from .schedulers import *
+from .analysers import *

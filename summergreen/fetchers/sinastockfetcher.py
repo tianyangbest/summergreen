@@ -9,6 +9,7 @@ import pandas as pd
 import redis
 import itertools
 from summergreen.fetchers import quotation
+import tqdm
 
 
 class SinaStockFetcher:
@@ -38,13 +39,23 @@ class SinaStockFetcher:
             snap_pipe.execute()
         except Exception as e:
             print(e)
-
-    def redis2parquet(self):
+            
+    def redis2df(self, match_time):
         redis_list = [[[k] + [i] + v.split(",") for k, v in self.r.hgetall(i).items()] for i in
-                      self.r.keys(f"{self.today}*")]
+                      self.r.keys(match_time)]
         redis_list = list(itertools.chain(*redis_list))
         df = pd.DataFrame(redis_list)
         df.columns = list(self.stock_config['sina_datatype'].keys())
         df = df.astype(self.stock_config['sina_datatype'])
         df = df.set_index(['code', 'time'])
+        return df        
+
+    def redis2parquet(self):
+        df = self.redis2df(f"{self.today}*")
         df.to_parquet(f"""{self.parquet_dir}/{self.today}.parquet""")
+
+    def df2codesplitjson(self, df):
+        return {
+            c: df[df.index.get_level_values("code") == c].reset_index(level=0, drop=True).sort_index()
+            for c in tqdm.tqdm(df.index.levels[0].to_list())
+        }
