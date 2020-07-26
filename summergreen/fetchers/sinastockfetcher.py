@@ -9,7 +9,8 @@ import pandas as pd
 import redis
 import itertools
 from summergreen.fetchers import quotation
-import tqdm
+import numpy as np
+from summergreen.processors import TickProcessor
 
 
 class SinaStockFetcher:
@@ -22,6 +23,8 @@ class SinaStockFetcher:
         self.sq = quotation.use("sina")
         with open(f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.json""") as f:
             self.stock_config = json.load(f)
+        with open(f"""{os.path.dirname(os.path.dirname(__file__))}/fetchers/quotation/stock_codes.conf""") as f:
+            self.stock_codes = json.load(f)
 
     def day_initialization(self):
         quotation.update_stock_codes()
@@ -39,7 +42,7 @@ class SinaStockFetcher:
             snap_pipe.execute()
         except Exception as e:
             print(e)
-            
+
     def redis2df(self, match_time):
         redis_list = [[[k] + [i] + v.split(",") for k, v in self.r.hgetall(i).items()] for i in
                       self.r.keys(match_time)]
@@ -48,14 +51,17 @@ class SinaStockFetcher:
         df.columns = list(self.stock_config['sina_datatype'].keys())
         df = df.astype(self.stock_config['sina_datatype'])
         df = df.set_index(['code', 'time'])
-        return df        
+        return df
 
     def redis2parquet(self):
         df = self.redis2df(f"{self.today}*")
         df.to_parquet(f"""{self.parquet_dir}/{self.today}.parquet""")
 
-    def df2codesplitjson(self, df):
-        return {
-            c: df[df.index.get_level_values("code") == c].reset_index(level=0, drop=True).sort_index()
-            for c in tqdm.tqdm(df.index.levels[0].to_list())
-        }
+    def redis2code_dfs(self, match_time):
+        redis_dict = {c: [] for c in self.stock_codes['stock']}
+        for i in sorted(self.r.keys(match_time)):
+            for k, v in self.r.hgetall(i).items():
+                redis_dict[k].append([k] + [i] + v.split(","))
+        for k in redis_dict:
+            redis_dict[k] = np.array(redis_dict[k])
+        return redis_dict
