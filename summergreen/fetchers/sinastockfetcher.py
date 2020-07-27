@@ -10,7 +10,6 @@ import redis
 import itertools
 from summergreen.fetchers import quotation
 import numpy as np
-from summergreen.processors import TickProcessor
 
 
 class SinaStockFetcher:
@@ -64,4 +63,6 @@ class SinaStockFetcher:
                 redis_dict[k].append([k] + [i] + v.split(","))
         for k in redis_dict:
             redis_dict[k] = np.array(redis_dict[k])
+        for k in redis_dict:
+            redis_dict[k] = np.concatenate([np.tile(redis_dict[k], (240, 1)), np.tile(redis_dict[k], (1, 1))], axis=0)
         return redis_dict

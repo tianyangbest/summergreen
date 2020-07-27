@@ -8,8 +8,8 @@ from summergreen.fetchers import sinastockfetcher
 class FetcherScheduler:
     def __init__(self):
         self.sf = sinastockfetcher.SinaStockFetcher(redis_host="localhost",
-                                                    redis_port=6379,
-                                                    redis_db=0,
+                                                    redis_port=6378,
+                                                    redis_db=1,
                                                     parquet_dir="/mnt/stock_data/stock_tick_current_day/", )
         self.bs = BackgroundScheduler()
 
