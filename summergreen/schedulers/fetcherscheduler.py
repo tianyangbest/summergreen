@@ -29,6 +29,7 @@ class FetcherScheduler:
         # test samples
         # self.bs.add_job(self.sf.snap2redis, 'cron', max_instances=10, second='*')
 
+
         self.bs.start()
         # shut down the scheduler when exiting the app
         atexit.register(lambda: self.bs.shutdown())
