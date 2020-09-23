@@ -4,9 +4,11 @@
 from flask import Flask
 from flask import jsonify
 from summergreen import FetcherScheduler
+from summergreen import LoaderScheduler
 
 app = Flask(__name__)
-fs = FetcherScheduler()
+# fs = FetcherScheduler()
+ls = LoaderScheduler()
 
 
 @app.route('/server_check', methods=['GET', 'POST'])

@@ -233,9 +233,4 @@ dask-worker-space/
 log.txt
 mystream.png
 nohup.out
-sinacsv2tmp-addition.ipynb
-sinacsv2tmp.ipynb
-tmp2level1-Copy1.ipynb
-tmp2level1-cudf.ipynb
-tmp2level1-dask.ipynb
-tmp2level1.ipynb
+*.ipynb

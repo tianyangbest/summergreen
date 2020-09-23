@@ -2,3 +2,4 @@
 # Author: Steven Field
 
 from .fetcherscheduler import *
+from .loaderscheduler import *
