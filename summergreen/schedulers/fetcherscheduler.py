@@ -8,7 +8,9 @@ from summergreen.fetchers import sinastockfetcher
 class FetcherScheduler:
     def __init__(self):
         self.sf = sinastockfetcher.SinaStockFetcher(
-            redis_host="localhost", redis_port=6378, redis_db=1,
+            redis_host="localhost",
+            redis_port=6378,
+            redis_db=1,
         )
         self.bs = BackgroundScheduler()
 
@@ -22,8 +24,7 @@ class FetcherScheduler:
         )
 
         self.bs.add_job(
-            self.sf.snap2redis, "cron",
-            hour="9-10,13-14", max_instances=10, second="*"
+            self.sf.snap2redis, "cron", hour="9-10,13-14", max_instances=10, second="*"
         )
         self.bs.add_job(
             self.sf.snap2redis,
@@ -44,7 +45,6 @@ class FetcherScheduler:
 
         # test samples
         # self.bs.add_job(self.sf.snap2redis, 'cron', max_instances=10, second='*')
-
 
         self.bs.start()
         # shut down the scheduler when exiting the app
