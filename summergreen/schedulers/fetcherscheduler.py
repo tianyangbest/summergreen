@@ -4,12 +4,14 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from summergreen.fetchers import sinastockfetcher
 import os
 
+sf = sinastockfetcher.SinaStockFetcher(
+    redis_host="localhost",
+    redis_port=6378,
+    redis_db=1,
+)
+
 if __name__ == "__main__":
-    sf = sinastockfetcher.SinaStockFetcher(
-        redis_host="localhost",
-        redis_port=6378,
-        redis_db=1,
-    )
+
     bs = BlockingScheduler()
 
     bs.add_job(
