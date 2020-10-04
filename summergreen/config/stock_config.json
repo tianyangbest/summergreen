@@ -1,5 +1,5 @@
 {
-  "sina_datatype": {
+  "sina_pandas_datatype": {
     "code": "object",
     "time": "datetime64",
     "current": "float",
@@ -27,5 +27,34 @@
     "b3_v": "float",
     "b4_v": "float",
     "b5_v": "float"
+  },
+    "sina_numpy_datatype": {
+    "code": "U10",
+    "time": "f8",
+    "current": "f8",
+    "high": "f8",
+    "low": "f8",
+    "volume": "f8",
+    "money": "f8",
+    "a1_p": "f8",
+    "a2_p": "f8",
+    "a3_p": "f8",
+    "a4_p": "f8",
+    "a5_p": "f8",
+    "a1_v": "f8",
+    "a2_v": "f8",
+    "a3_v": "f8",
+    "a4_v": "f8",
+    "a5_v": "f8",
+    "b1_p": "f8",
+    "b2_p": "f8",
+    "b3_p": "f8",
+    "b4_p": "f8",
+    "b5_p": "f8",
+    "b1_v": "f8",
+    "b2_v": "f8",
+    "b3_v": "f8",
+    "b4_v": "f8",
+    "b5_v": "f8"
   }
 }

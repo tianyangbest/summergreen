@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-# Author: Steven Field
-
 import json
 import os
-import datetime
 import pandas as pd
 import redis
 import itertools
@@ -39,5 +36,8 @@ class SinaStockLoader(object):
         redis_dict = {c: [] for c in self.stock_codes["stock"]}
         for i in sorted(self.r.keys(match_time)):
             for k, v in self.r.hgetall(i).items():
-                redis_dict[k].append([k] + [i] + v.split(","))
+                try:
+                    redis_dict[k].append([k] + [i] + v.split(","))
+                except:
+                    pass
         return redis_dict
