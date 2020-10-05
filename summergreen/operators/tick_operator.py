@@ -2,10 +2,9 @@
 import datetime
 import json
 import os
-
+import ray
 import numpy as np
 import redis
-
 from summergreen.utils.logging_mixin import LoggingMixin
 
 
@@ -29,16 +28,12 @@ class TickOperator(LoggingMixin):
         ]
         init_arr = np.array([], dtype=self.stock_dtypes)
         self.stock_codes_arr_dict = {code: init_arr.copy() for code in self.stock_codes}
-        # init_df = (
-        #     pd.DataFrame(columns=self.stock_config["sina_datatype"].keys())
-        #     .astype(self.stock_config["sina_datatype"])
-        #     .set_index("time")
-        # )
-        # ray.init()
-        # self.stock_codes_df_dict = {
-        #     code: ray.put(init_df.copy()) for code in self.stock_codes
-        # }
-        # self.stock_codes_df_dict = {code: init_df.copy() for code in self.stock_codes}
+
+        ray.init()
+        self.stock_codes_arr_dict_ray = {
+            code: ray.put(init_arr.copy()) for code in self.stock_codes
+        }
+        # self.stock_dtypes_ray = ray.put(self.stock_dtypes)
 
     def update_stock_codes_arr_dict(self, time_str):
         tmp_time_stamp = datetime.datetime.strptime(
@@ -61,27 +56,10 @@ class TickOperator(LoggingMixin):
                         ),
                     ),
                 )
+                # self.stock_codes_arr_dict_ray[k] = ray.put(self.stock_codes_arr_dict[k])
             except KeyError as e:
-                self.log.exception(e)
+                self.log.error(e)
         return self
-
-    # def update_stock_codes_df_dict(self, time):
-    #     tmp_dict = self.r.hgetall(time)
-    #     for k, v in tmp_dict.items():
-    #         self.stock_codes_df_dict[k] = update_df.remote(
-    #             self.stock_codes_df_dict[k], time, k, v
-    #         )
-
-    # def update_stock_codes_df_dict(self, time):
-    #     tmp_dict = self.r.hgetall(time)
-    #     for k, v in tmp_dict.items():
-    #         self.stock_codes_df_dict[k].loc[time] = [k] + v.split(",")
-
-
-# @ray.remote
-# def update_df(obj_ref_df, new_time_index, code, new_line):
-#     obj_ref_df.loc[new_time_index] = [code] + new_line.split(",")
-#     return obj_ref_df
 
 
 if __name__ == "__main__":

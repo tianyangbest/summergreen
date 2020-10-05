@@ -3,7 +3,7 @@ import os
 import json
 import ray
 from apscheduler.schedulers.blocking import BlockingScheduler
-from summergreen.analysers import Ranger
+from summergreen.analysers.ranger import Ranger
 from summergreen.loaders import sinastockloader
 
 with open(
