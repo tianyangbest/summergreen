@@ -1,8 +1,10 @@
 {
-  "redis_config": {
-    "redis_host":"localhost",
-    "redis_port":6378,
-    "redis_db":1
+  "tick_redis_config": {
+    "host": "localhost",
+    "port": 6379,
+    "db": 2,
+    "encoding": "utf-8",
+    "decode_responses": 1
   },
   "to_day_parquet_dir": "/mnt/stock_data/stock_tick_current_day/"
 }

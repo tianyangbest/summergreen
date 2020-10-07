@@ -26,7 +26,7 @@ def initial_one_day_job():
             "date",
             run_date=t,
             args=["merger", t],
-            misfire_grace_time=24 * 60 * 60,
+            misfire_grace_time=6 * 60 * 60,
         )
 
     ranger15_time_list = get_all_timestamp_list(
@@ -40,7 +40,7 @@ def initial_one_day_job():
             "date",
             run_date=t,
             args=["ranger15", t],
-            misfire_grace_time=24 * 60 * 60,
+            misfire_grace_time=6 * 60 * 60,
         )
 
 
@@ -48,7 +48,6 @@ def initial_one_day_job():
 #     initial_one_day_job,
 #     "cron",
 #     hour="9",
-#     misfire_grace_time=24 * 60 * 60,
 # )
 bs.add_job(
     initial_one_day_job,
