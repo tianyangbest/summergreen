@@ -16,8 +16,7 @@ class TickOperator(LoggingMixin, BaseOperator):
             host=self._base_config["tick_redis_config"]["host"],
             port=self._base_config["tick_redis_config"]["port"],
             db=self._base_config["tick_redis_config"]["db"],
-            encoding="utf-8",
-            decode_responses=1,
+            decode_responses=self._base_config["tick_redis_config"]["decode_responses"],
         )
         self._stock_dtypes = [
             (k, v) for k, v in self._stock_config["tick_numpy_datatype"].items()
@@ -31,13 +30,15 @@ class TickOperator(LoggingMixin, BaseOperator):
     def get_stock_codes_list(self):
         return self._stock_codes["stock"]
 
-    def update_stock_codes_arr_dict(self, tmp_time_str):
+    def update_stock_codes_arr_dict(self, tmp_time_str: str):
         tmp_time_stamp = datetime.datetime.strptime(
             tmp_time_str, "%Y-%m-%d %H:%M:%S"
         ).timestamp()
         if tmp_time_stamp <= self._last_update_time_stamp:
             raise ValueError(
-                "tmp_time_stamp is smaller than or equal to  _last_update_time_stamp."
+                f"tmp_time_stamp:{datetime.datetime.fromtimestamp(tmp_time_stamp)} "
+                f"is smaller than or equal to  "
+                f"_last_update_time_stamp:{datetime.datetime.fromtimestamp(self._last_update_time_stamp)}"
             )
         tmp_dict = self._r.hgetall(tmp_time_str)
         for k, v in tmp_dict.items():
@@ -69,7 +70,12 @@ class TickOperator(LoggingMixin, BaseOperator):
             except Exception as e:
                 self.log.error(e)
 
-    def get_arr_by_time_code(self, code, start_time_stamp, end_time_stamp):
+        self._last_update_time_stamp = tmp_time_stamp
+        print(tmp_time_str, ":", len(tmp_dict))
+
+    def get_arr_by_time_code(
+        self, code: str, start_time_stamp: float, end_time_stamp: float
+    ):
         arr_by_time_code = self._stock_codes_arr_dict[code]
         return arr_by_time_code[
             (arr_by_time_code["time"] >= start_time_stamp)
@@ -87,6 +93,23 @@ class TickOperator(LoggingMixin, BaseOperator):
             low = arr_by_time_code["low"].min()
             volume = arr_by_time_code["volume"].sum()
             money = arr_by_time_code["money"].sum()
-            return [open, close, high, low, volume, money]
+            return [code, bar_start_time_stamp, open, close, high, low, volume, money]
         except Exception as e:
+            # self.log.error([code, bar_start_time_stamp, bar_end_time_stamp, e])
             return None
+
+    def get_bar_list_by_time(self, bar_start_time_stamp, bar_end_time_stamp):
+        bar_list = [
+            b
+            for b in [
+                self.get_bar_by_time_code(c, bar_start_time_stamp, bar_end_time_stamp)
+                for c in self.get_stock_codes_list()
+            ]
+            if b is not None
+        ]
+        print(bar_list)
+        return bar_list
+
+
+if __name__ == "__main__":
+    pass

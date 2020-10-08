@@ -3,6 +3,5 @@
 
 from .fetchers import *
 from .schedulers import *
-from .analysers import *
 from .loaders import *
 from .operators import *
