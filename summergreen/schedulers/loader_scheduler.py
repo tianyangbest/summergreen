@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
 import datetime
-import json
+
+import yaml
 from apscheduler.schedulers.blocking import BlockingScheduler
 from summergreen.loaders import sinastockloader
 
 
 with open(
-    f"""{os.path.dirname(os.path.dirname(__file__))}/config/base_config.json"""
+    f"""{os.path.dirname(os.path.dirname(__file__))}/config/base_config.yaml"""
 ) as f:
-    redis_config = json.load(f)["redis_config"]
+    redis_config = yaml.full_load(f)["tick_redis_config"]
 
 sl = sinastockloader.SinaStockLoader(
     redis_host=redis_config["redis_host"],

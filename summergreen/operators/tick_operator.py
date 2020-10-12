@@ -64,8 +64,12 @@ class TickOperator(LoggingMixin, BaseOperator):
                             ),
                         ),
                     )
-                    tmp_arr["volume"] = np.diff(np.hstack((0, tmp_arr["volume_incr"])))
-                    tmp_arr["money"] = np.diff(np.hstack((0, tmp_arr["money_incr"])))
+                    tmp_arr["volume_increased"] = np.diff(
+                        np.hstack((0, tmp_arr["volume"]))
+                    )
+                    tmp_arr["money_increased"] = np.diff(
+                        np.hstack((0, tmp_arr["money"]))
+                    )
                     self._stock_codes_arr_dict[k] = tmp_arr
             except Exception as e:
                 self.log.error(e)

@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
-import json
 from apscheduler.schedulers.blocking import BlockingScheduler
-from summergreen.fetchers import sinastockfetcher
-
+from summergreen.fetchers.sinastockfetcher import SinaStockFetcher
+import yaml
 
 with open(
-    f"""{os.path.dirname(os.path.dirname(__file__))}/config/base_config.json"""
+    f"""{os.path.dirname(os.path.dirname(__file__))}/config/base_config.yaml"""
 ) as f:
-    redis_config = json.load(f)["redis_config"]
-sf = sinastockfetcher.SinaStockFetcher(
+    redis_config = yaml.full_load(f)["tick_redis_config"]
+sf = SinaStockFetcher(
     redis_host=redis_config["redis_host"],
     redis_port=redis_config["redis_port"],
     redis_db=redis_config["redis_db"],
