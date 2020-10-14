@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import datetime
 import json
 import os
 
@@ -12,6 +11,7 @@ with open(
     f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.yaml"""
 ) as f:
     stock_config = yaml.full_load(f)
+
     joint_stock_config = stock_config["tick_dtypes"].copy()
     joint_stock_config["time"] = "object"
 
@@ -34,16 +34,15 @@ def fix_redis_df_bug(original_df: pd.DataFrame):
 
 def concat_joint_parquet_list(one_day_parquet_path_list):
     """
-
+    Parameters
+    --------
     :param one_day_parquet_path_list: path list
     :return: pd.DataFrame()
     Example:
     --------
-    >>> st_date = "2020-10-09"
     >>> df = concat_joint_parquet_list(
-    >>> glob.glob(f"/mnt/stock_data/tmp_data/{st_date}_*.csv.gz")
+    >>> glob.glob("/mnt/stock_data/tmp_data/2020-10-09_*.csv.gz")
     >>> )
-    >>> df.to_parquet(f"/mnt/stock_data/stock_tick_current_day/{st_date}.parquet")
     """
     df = dd.read_csv(
         one_day_parquet_path_list,
@@ -60,7 +59,7 @@ def concat_joint_parquet_list(one_day_parquet_path_list):
 def json_file2yaml_file(json_file_path, yaml_file_path):
     """
     Parameters
-    ----------
+    --------
     :param json_file_path:
     :param yaml_file_path:
     Example:
@@ -70,12 +69,12 @@ def json_file2yaml_file(json_file_path, yaml_file_path):
     >>> "/mnt/project_data/projects/summergreen/summergreen/config/base_config.yaml")
     """
     with open(json_file_path) as f:
-        stock_config = json.load(f)
+        _stock_config = json.load(f)
     with open(
         yaml_file_path,
         "w",
     ) as f:
-        yaml.dump(stock_config, f, Dumper=yaml.SafeDumper)
+        yaml.safe_dump(_stock_config, f)
 
 
 def mirror_df2redis(df: pd.DataFrame):
@@ -86,6 +85,11 @@ def mirror_df2redis(df: pd.DataFrame):
         decode_responses=base_config["mirror_redis_config"]["decode_responses"],
     )
     with r.pipeline(transaction=False) as p:
+        i = 0
         for k, v in df.iterrows():
-            p.hset(str(k[1]), k[0], v.tolist())
-            p.execute()
+            p.hset(str(k[1]), k[0], ",".join([str(i) for i in v.tolist()]))
+            i = i + 1
+            if i > 10000:
+                p.execute()
+                i = 0
+        p.execute()
