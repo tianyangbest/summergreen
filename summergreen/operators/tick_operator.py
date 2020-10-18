@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import redis
 import tqdm
-
+from sqlalchemy import create_engine
 from summergreen.operators.base_operator import BaseOperator
 from summergreen.utils.logging_mixin import LoggingMixin
 from summergreen.utils.redis_util import redis_value2list
@@ -29,6 +29,16 @@ class TickOperator(LoggingMixin, BaseOperator):
         self._stock_codes_arr_dict = {
             code: init_arr.copy() for code in self._stock_codes["stock"]
         }
+        self._base_postgres_engine = create_engine(
+            self._base_config["base_postgres_engine_str"]
+        )
+        print(
+            self._base_postgres_engine.execute(
+                """SELECT max(time), min(time) FROM base_info.bar_1day"""
+            ).fetchall()
+        )
+
+        self._stock_codes_last_close_dict = {}
         self._last_update_time_stamp = 0
 
     def mirror_from_df(self, df):

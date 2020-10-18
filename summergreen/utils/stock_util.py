@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import json
 import os
 
@@ -6,6 +7,7 @@ import pandas as pd
 import redis
 import yaml
 from dask import dataframe as dd
+from sqlalchemy import create_engine
 
 with open(
     f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.yaml"""
@@ -93,3 +95,15 @@ def mirror_df2redis(df: pd.DataFrame):
                 p.execute()
                 i = 0
         p.execute()
+
+
+def get_last_trade_date(dt):
+    base_postgres_engine = create_engine(base_config["base_postgres_engine_str"])
+    df = pd.read_sql_query(
+        f"""SELECT * FROM base_info.calendar 
+        WHERE trade_date < '{dt}' ORDER BY trade_date DESC LIMIT 1""",
+        base_postgres_engine,
+    )
+    return df.loc[0]["trade_date"]
+    # last_date = df.iloc[-1]["trade_date"]
+    # return last_date
