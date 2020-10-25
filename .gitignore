@@ -234,4 +234,4 @@ mystream.png
 nohup.out
 *.ipynb
 /summergreen/config/
-!/summergreen/config/base_config.yaml
+!/summergreen/config/base_config.yml

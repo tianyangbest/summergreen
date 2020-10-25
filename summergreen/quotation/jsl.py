@@ -23,24 +23,22 @@ class Jsl:
     __fundm_url = "https://www.jisilu.cn/data/sfnew/fundm_list/?___t={ctime:d}"
 
     # 分级套利的接口
-    __fundarb_url = (
-        "http://www.jisilu.cn/data/sfnew/arbitrage_vip_list/?___t={ctime:d}"
-    )
+    __fundarb_url = "http://www.jisilu.cn/data/sfnew/arbitrage_vip_list/?___t={ctime:d}"
 
     # 集思录登录接口
     __jsl_login_url = "https://www.jisilu.cn/account/ajax/login_process/"
 
     # 集思录 ETF 接口
     # pylint: disable=line-too-long
-    __etf_index_url = "https://www.jisilu.cn/data/etf/etf_list/?___jsl=LST___t={ctime:d}&rp=25&page=1"
+    __etf_index_url = (
+        "https://www.jisilu.cn/data/etf/etf_list/?___jsl=LST___t={ctime:d}&rp=25&page=1"
+    )
 
     # 黄金 ETF , 货币 ETF 留坑,未完成
     __etf_gold_url = (
         "https://www.jisilu.cn/jisiludata/etf.php?qtype=pmetf&___t={ctime:d}"
     )
-    __etf_money_url = (
-        "https://www.jisilu.cn/data/money_fund/list/?___t={ctime:d}"
-    )
+    __etf_money_url = "https://www.jisilu.cn/data/money_fund/list/?___t={ctime:d}"
 
     # 集思录QDII接口
     __qdii_url = "https://www.jisilu.cn/data/qdii/qdii_list/?___t={ctime:d}"
@@ -145,7 +143,7 @@ class Jsl:
         :param per:
         :return:
         """
-        return float(per.strip("%")) / 100.
+        return float(per.strip("%")) / 100.0
 
     def funda(
         self,
@@ -176,27 +174,17 @@ class Jsl:
         # 过滤小于指定交易量的数据
         if min_volume:
             data = {
-                k: data[k]
-                for k in data
-                if float(data[k]["funda_volume"]) > min_volume
+                k: data[k] for k in data if float(data[k]["funda_volume"]) > min_volume
             }
         if len(fields):
             data = {
-                k: data[k]
-                for k in data
-                if data[k]["coupon_descr_s"] in "".join(fields)
+                k: data[k] for k in data if data[k]["coupon_descr_s"] in "".join(fields)
             }
         if ignore_nodown:
-            data = {
-                k: data[k]
-                for k in data
-                if data[k]["fund_descr"].find("无下折") == -1
-            }
+            data = {k: data[k] for k in data if data[k]["fund_descr"].find("无下折") == -1}
         if forever:
             data = {
-                k: data[k]
-                for k in data
-                if data[k]["funda_left_year"].find("永续") != -1
+                k: data[k] for k in data if data[k]["funda_left_year"].find("永续") != -1
             }
         if min_discount:
             data = {
@@ -209,8 +197,7 @@ class Jsl:
         return self.__funda
 
     def fundm(self):
-        """以字典形式返回分级母基数据
-        """
+        """以字典形式返回分级母基数据"""
         # 添加当前的ctime
         self.__fundm_url = self.__fundm_url.format(ctime=int(time.time()))
         # 请求数据
@@ -242,21 +229,15 @@ class Jsl:
         # 过滤小于指定交易量的数据
         if min_volume:
             data = {
-                k: data[k]
-                for k in data
-                if float(data[k]["fundb_volume"]) > min_volume
+                k: data[k] for k in data if float(data[k]["fundb_volume"]) > min_volume
             }
         if len(fields):
             data = {
-                k: data[k]
-                for k in data
-                if data[k]["coupon_descr_s"] in "".join(fields)
+                k: data[k] for k in data if data[k]["coupon_descr_s"] in "".join(fields)
             }
         if forever:
             data = {
-                k: data[k]
-                for k in data
-                if data[k]["fundb_left_year"].find("永续") != -1
+                k: data[k] for k in data if data[k]["fundb_left_year"].find("永续") != -1
             }
         if min_discount:
             data = {
@@ -324,9 +305,7 @@ class Jsl:
         self.__fundarb = data
         return self.__fundarb
 
-    def etfindex(
-        self, index_id="", min_volume=0, max_discount=None, min_discount=None
-    ):
+    def etfindex(self, index_id="", min_volume=0, max_discount=None, min_discount=None):
         """
         以字典形式返回 指数ETF 数据
         :param index_id: 获取指定的指数
@@ -365,7 +344,7 @@ class Jsl:
                     # 如果是字符串形式,先转为浮点形式
                     min_discount = self.percentage2float(min_discount)
                 else:
-                    min_discount = float(min_discount) / 100.
+                    min_discount = float(min_discount) / 100.0
             data = {
                 fund_id: cell
                 for fund_id, cell in data.items()
@@ -378,7 +357,7 @@ class Jsl:
                     # 如果是字符串形式,先转为浮点形式
                     max_discount = self.percentage2float(max_discount)
                 else:
-                    max_discount = float(max_discount) / 100.
+                    max_discount = float(max_discount) / 100.0
             data = {
                 fund_id: cell
                 for fund_id, cell in data.items()
@@ -403,11 +382,7 @@ class Jsl:
         data = {x: y for x, y in data.items() if y["notes"] != "估值有问题"}
         # 过滤小于指定交易量的数据
         if min_volume:
-            data = {
-                k: data[k]
-                for k in data
-                if float(data[k]["volume"]) > min_volume
-            }
+            data = {k: data[k] for k in data if float(data[k]["volume"]) > min_volume}
 
         self.__qdii = data
         return self.__qdii
@@ -427,11 +402,7 @@ class Jsl:
         data = self.formatjisilujson(fundjson)
         # 过滤小于指定交易量的数据
         if min_volume:
-            data = {
-                k: data[k]
-                for k in data
-                if float(data[k]["volume"]) > min_volume
-            }
+            data = {k: data[k] for k in data if float(data[k]["volume"]) > min_volume}
 
         self.__cb = data
         return self.__cb

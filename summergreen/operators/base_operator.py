@@ -7,12 +7,12 @@ import yaml
 class BaseOperator:
     def __init__(self):
         with open(
-            f"""{os.path.dirname(os.path.dirname(__file__))}/config/base_config.yaml"""
+            f"""{os.path.dirname(os.path.dirname(__file__))}/config/base_config.yml"""
         ) as f:
             self._base_config = yaml.full_load(f)
 
         with open(
-            f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.yaml"""
+            f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.yml"""
         ) as tmp_f:
             self._stock_config = yaml.full_load(tmp_f)
 

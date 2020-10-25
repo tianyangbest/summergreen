@@ -19,8 +19,7 @@ class TimeKline(basequotation.BaseQuotation):
 
     def _gen_stock_prefix(self, stock_codes):
         return [
-            helpers.get_stock_type(code) + code[-6:] + ".js"
-            for code in stock_codes
+            helpers.get_stock_type(code) + code[-6:] + ".js" for code in stock_codes
         ]
 
     def _fetch_stock_data(self, stock_list):
@@ -40,8 +39,6 @@ class TimeKline(basequotation.BaseQuotation):
             # res like ['min_data="', 'date:180413', '0930 11.64 29727', '0931 11.65 52410']
             res = re.split(r"\\n\\\n", stock_detail)
             date = "20{}".format(res[1][-6:])
-            time_data = list(
-                d.split() for d in res[2:] if re.match(r"\d{4}", d)
-            )
+            time_data = list(d.split() for d in res[2:] if re.match(r"\d{4}", d))
             stock_dict[stock_code] = {"date": date, "time_data": time_data}
         return stock_dict

@@ -18,7 +18,7 @@ with open(
     joint_stock_config["time"] = "object"
 
 with open(
-    f"""{os.path.dirname(os.path.dirname(__file__))}/config/base_config.yaml"""
+    f"""{os.path.dirname(os.path.dirname(__file__))}/config/base_config.yml"""
 ) as f:
     base_config = yaml.full_load(f)
 
@@ -68,7 +68,7 @@ def json_file2yaml_file(json_file_path, yaml_file_path):
     --------
     >>> json_file2yaml_file(
     >>> "/mnt/project_data/projects/summergreen/summergreen/config/base_config.json",
-    >>> "/mnt/project_data/projects/summergreen/summergreen/config/base_config.yaml")
+    >>> "/mnt/project_data/projects/summergreen/summergreen/config/base_config.yml")
     """
     with open(json_file_path) as f:
         _stock_config = json.load(f)

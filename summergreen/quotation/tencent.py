@@ -25,9 +25,7 @@ class Tencent(basequotation.BaseQuotation):
             if len(stock) <= 49:
                 continue
             stock_code = (
-                self.grep_stock_code.search(stock[0]).group()
-                if prefix
-                else stock[2]
+                self.grep_stock_code.search(stock[0]).group() if prefix else stock[2]
             )
             stock_dict[stock_code] = {
                 "name": stock[1],
