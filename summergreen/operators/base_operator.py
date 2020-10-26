@@ -17,6 +17,6 @@ class BaseOperator:
             self._stock_config = yaml.full_load(tmp_f)
 
         with open(
-            f"""{os.path.dirname(os.path.dirname(__file__))}/fetchers/quotation/stock_codes.conf"""
+            f"""{os.path.dirname(os.path.dirname(__file__))}/quotation/stock_codes.conf"""
         ) as tmp_f:
             self._stock_codes = json.load(tmp_f)

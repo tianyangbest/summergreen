@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -32,14 +33,31 @@ class TickOperator(LoggingMixin, BaseOperator):
         self._base_postgres_engine = create_engine(
             self._base_config["base_postgres_engine_str"]
         )
-        print(
-            self._base_postgres_engine.execute(
-                """SELECT max(time), min(time) FROM base_info.bar_1day"""
-            ).fetchall()
-        )
 
         self._stock_codes_last_close_dict = {}
         self._last_update_time_stamp = 0
+
+    def redis2df(self, match_time):
+        redis_list = [
+            [[k] + [i] + v.split(",") for k, v in self._r.hgetall(i).items()]
+            for i in self._r.keys(match_time)
+        ]
+        redis_list = list(itertools.chain(*redis_list))
+        df = pd.DataFrame(redis_list)
+        df.columns = list(self._stock_config["sina_datatype"].keys())
+        df = df.astype(self._stock_config["sina_datatype"])
+        df = df.set_index(["code", "time"])
+        return df
+
+    def redis2json(self, match_time):
+        redis_dict = {c: [] for c in self._stock_codes["stock"]}
+        for i in sorted(self._r.keys(match_time)):
+            for k, v in self._r.hgetall(i).items():
+                try:
+                    redis_dict[k].append([k] + [i] + v.split(","))
+                except:
+                    pass
+        return redis_dict
 
     def mirror_from_df(self, df):
         df["volume_increased"] = df.groupby(level=[0])["volume"].shift()
@@ -60,6 +78,7 @@ class TickOperator(LoggingMixin, BaseOperator):
         tmp_time_stamp = datetime.datetime.strptime(
             tmp_time_str, "%Y-%m-%d %H:%M:%S"
         ).timestamp()
+        self.log.info(f"更新{tmp_time_str}")
         if tmp_time_stamp <= self._last_update_time_stamp:
             raise ValueError(
                 f"tmp_time_stamp:{datetime.datetime.fromtimestamp(tmp_time_stamp)} "
@@ -125,7 +144,6 @@ class TickOperator(LoggingMixin, BaseOperator):
             money = arr_by_time_code["money_increased"].sum()
             return [code, bar_start_time, open, close, high, low, volume, money]
         except Exception as e:
-            # self.log.error([code, bar_start_time_stamp, bar_end_time_stamp, e])
             return None
 
     def get_bar_list_by_time(self, bar_start_time, bar_end_time):
@@ -150,6 +168,5 @@ class TickOperator(LoggingMixin, BaseOperator):
             )
         return pd.DataFrame(bar_list, columns=self._stock_config["bar_dtypes"].keys())
 
-
-if __name__ == "__main__":
-    pass
+    def redis2df2parquet(self, date_str, parquet_dir):
+        self.redis2df(date_str).to_parquet(parquet_dir)

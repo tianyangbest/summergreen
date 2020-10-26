@@ -10,7 +10,7 @@ from dask import dataframe as dd
 from sqlalchemy import create_engine
 
 with open(
-    f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.yaml"""
+    f"""{os.path.dirname(os.path.dirname(__file__))}/config/stock_config.yml"""
 ) as f:
     stock_config = yaml.full_load(f)
 
@@ -81,10 +81,10 @@ def json_file2yaml_file(json_file_path, yaml_file_path):
 
 def mirror_df2redis(df: pd.DataFrame):
     r = redis.Redis(
-        host=base_config["mirror_redis_config"]["host"],
-        port=base_config["mirror_redis_config"]["port"],
-        db=base_config["mirror_redis_config"]["db"],
-        decode_responses=base_config["mirror_redis_config"]["decode_responses"],
+        host=base_config["tick_redis_config"]["host"],
+        port=base_config["tick_redis_config"]["port"],
+        db=base_config["tick_redis_config"]["db"],
+        decode_responses=base_config["tick_redis_config"]["decode_responses"],
     )
     with r.pipeline(transaction=False) as p:
         i = 0
