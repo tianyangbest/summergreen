@@ -13,7 +13,7 @@ class KScheduler(BaseScheduler):
         super().__init__()
         self._scheduler_name = "K线数据调度"
         self._q = queue.Queue()
-        self._tio = KOperator()
+        self._ko = KOperator()
         threading.Thread(target=self.q_worker, daemon=True).start()
         self._bs.add_job(
             self.initial_today_job,
@@ -34,7 +34,7 @@ class KScheduler(BaseScheduler):
     def initial_today_job(self):
         self.log.info("K线数据调度今日调度已经初始化")
         self._q.empty()
-        self._tio.__init__()
+        self._ko.__init__()
         today_datetime = datetime.datetime.now().replace(
             hour=0, minute=0, second=0, microsecond=0
         )
@@ -44,13 +44,13 @@ class KScheduler(BaseScheduler):
             today_datetime + datetime.timedelta(hours=15, minutes=10),
             1,
         ):
-            tmp_time_str = str(t - datetime.timedelta(seconds=14))
+            tmp_time = t - datetime.timedelta(seconds=14)
             self._bs.add_job(
                 self._q.put,
                 "date",
                 run_date=t,
-                args=[[self._tio.update_stock_codes_arr_dict, tmp_time_str]],
-                misfire_grace_time=16 * 60 * 60,
+                args=[[self._ko.update_stock_codes_arr_dict, tmp_time]],
+                misfire_grace_time=8 * 60 * 60,
             )
 
         for t in get_all_timestamp_list(
@@ -58,18 +58,18 @@ class KScheduler(BaseScheduler):
             today_datetime + datetime.timedelta(hours=15, minutes=10),
             15,
         ):
-            bar_start_time_stamp = (t - datetime.timedelta(seconds=30)).timestamp()
-            bar_end_time_stamp = (t - datetime.timedelta(seconds=15)).timestamp()
+            bar_start_time = t - datetime.timedelta(seconds=30)
+            bar_end_time = t - datetime.timedelta(seconds=15)
             self._bs.add_job(
                 self._q.put,
                 "date",
                 run_date=t,
                 args=[
                     [
-                        self._tio.get_bar_list_by_time,
-                        bar_start_time_stamp,
-                        bar_end_time_stamp,
+                        self._ko.update_k_list_by_time,
+                        bar_start_time,
+                        bar_end_time,
                     ]
                 ],
-                misfire_grace_time=16 * 60 * 60,
+                misfire_grace_time=8 * 60 * 60,
             )
