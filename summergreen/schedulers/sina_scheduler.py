@@ -27,8 +27,6 @@ class SinaScheduler(BaseScheduler):
             minute="59",
             second="0",
             max_instances=1,
-            next_run_time=datetime.datetime.now().replace(hour=0),
-            misfire_grace_time=60 * 60 * 23,
         )
 
         self._bs.add_job(
@@ -37,8 +35,6 @@ class SinaScheduler(BaseScheduler):
             hour="9-10,13-14",
             max_instances=10,
             second="*/3",
-            next_run_time=datetime.datetime.now().replace(hour=0),
-            misfire_grace_time=60 * 60 * 23,
         )
         self._bs.add_job(
             self.snap2redis,
@@ -47,8 +43,6 @@ class SinaScheduler(BaseScheduler):
             minute="0-31",
             max_instances=10,
             second="*/3",
-            next_run_time=datetime.datetime.now().replace(hour=0),
-            misfire_grace_time=60 * 60 * 23,
         )
         self._bs.add_job(
             self.snap2redis,
@@ -57,8 +51,6 @@ class SinaScheduler(BaseScheduler):
             minute="0-5",
             max_instances=10,
             second="*/3",
-            next_run_time=datetime.datetime.now().replace(hour=0),
-            misfire_grace_time=60 * 60 * 23,
         )
 
     def day_initialization(self):

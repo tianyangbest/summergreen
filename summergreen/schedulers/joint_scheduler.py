@@ -194,6 +194,7 @@ class JointScheduler(BaseScheduler):
         self._base_postgres_engine.execute(
             f"""DELETE FROM base_info.k_1day WHERE time between '{start_date}' AND '{end_date}'"""
         )
+        df = df[(~df.open.isna()) & (df.volume > 0)]
         df.to_sql(
             "k_1day",
             self._base_postgres_engine,

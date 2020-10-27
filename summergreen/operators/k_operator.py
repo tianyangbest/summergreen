@@ -13,7 +13,7 @@ from summergreen.utils.redis_util import redis_value2list
 from summergreen.utils.time_util import get_all_timestamp_list
 
 
-class TickOperator(LoggingMixin, BaseOperator):
+class KOperator(LoggingMixin, BaseOperator):
     def __init__(self):
         super().__init__()
         self._r = redis.Redis(
@@ -25,6 +25,9 @@ class TickOperator(LoggingMixin, BaseOperator):
 
         self._stock_dtypes = [
             (k, v) for k, v in self._stock_config["tick_dtypes"].items()
+        ]
+        self._stock_increased_dtypes = [
+            (k, v) for k, v in self._stock_config["tick_increased_dtypes"].items()
         ]
         init_arr = np.array([], dtype=self._stock_dtypes)
         self._stock_codes_arr_dict = {
@@ -44,8 +47,8 @@ class TickOperator(LoggingMixin, BaseOperator):
         ]
         redis_list = list(itertools.chain(*redis_list))
         df = pd.DataFrame(redis_list)
-        df.columns = list(self._stock_config["sina_datatype"].keys())
-        df = df.astype(self._stock_config["sina_datatype"])
+        df.columns = list(self._stock_config["tick_dtypes"].keys())
+        df = df.astype(self._stock_config["tick_dtypes"])
         df = df.set_index(["code", "time"])
         return df
 
@@ -78,6 +81,8 @@ class TickOperator(LoggingMixin, BaseOperator):
         tmp_time_stamp = datetime.datetime.strptime(
             tmp_time_str, "%Y-%m-%d %H:%M:%S"
         ).timestamp()
+        tmp_time_np = np.datetime64(tmp_time_str)
+        print(tmp_time_stamp)
         self.log.info(f"更新{tmp_time_str}")
         if tmp_time_stamp <= self._last_update_time_stamp:
             raise ValueError(
@@ -87,37 +92,36 @@ class TickOperator(LoggingMixin, BaseOperator):
             )
         tmp_dict = self._r.hgetall(tmp_time_str)
         for k, v in tmp_dict.items():
-            try:
-                redis_value_list = redis_value2list(v)
-                if (
-                    redis_value_list[0] <= 0
-                    or redis_value_list[1] <= 0
-                    or redis_value_list[2] <= 0
-                ):
-                    pass
-                else:
-                    tmp_arr = np.hstack(
-                        (
-                            self._stock_codes_arr_dict[k],
-                            np.array(
-                                [
-                                    tuple(
-                                        [k, tmp_time_stamp] + redis_value_list + [0, 0]
-                                    )
-                                ],
-                                dtype=self._stock_dtypes,
-                            ),
+            redis_value_list = redis_value2list(v)
+            if (
+                redis_value_list[0] <= 0
+                or redis_value_list[1] <= 0
+                or redis_value_list[2] <= 0
+            ):
+                pass
+            else:
+                print([tuple([k, tmp_time_stamp] + redis_value_list + [0, 0])])
+                print(self._stock_dtypes + self._stock_increased_dtypes)
+
+                print(
+                    np.array(
+                        [tuple([k, tmp_time_stamp] + redis_value_list + [0, 0])],
+                        dtype=self._stock_dtypes + self._stock_increased_dtypes,
+                    ),
+                )
+                print(self._stock_codes_arr_dict[k])
+                tmp_arr = np.hstack(
+                    (
+                        self._stock_codes_arr_dict[k],
+                        np.array(
+                            [tuple([k, tmp_time_stamp] + redis_value_list + [0, 0])],
+                            dtype=self._stock_dtypes + self._stock_increased_dtypes,
                         ),
-                    )
-                    tmp_arr["volume_increased"] = np.diff(
-                        np.hstack((0, tmp_arr["volume"]))
-                    )
-                    tmp_arr["money_increased"] = np.diff(
-                        np.hstack((0, tmp_arr["money"]))
-                    )
-                    self._stock_codes_arr_dict[k] = tmp_arr
-            except Exception as e:
-                self.log.error(e)
+                    ),
+                )
+                tmp_arr["volume_increased"] = np.diff(np.hstack((0, tmp_arr["volume"])))
+                tmp_arr["money_increased"] = np.diff(np.hstack((0, tmp_arr["money"])))
+                self._stock_codes_arr_dict[k] = tmp_arr
 
         self._last_update_time_stamp = tmp_time_stamp
 

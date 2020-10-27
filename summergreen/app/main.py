@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from summergreen.schedulers.k_scheduler import KScheduler
 from summergreen.schedulers.sina_scheduler import SinaScheduler
 from summergreen.schedulers.joint_scheduler import JointScheduler
 from fastapi import FastAPI
@@ -11,8 +12,9 @@ joint_scheduler.start_now()
 fetcher_scheduler = SinaScheduler()
 fetcher_scheduler.start_now()
 
-# Redis数据存储
-
+# Redis数据存储同步到k_scheduler服务
+k_scheduler = KScheduler()
+k_scheduler.start_now()
 
 app = FastAPI()
 
