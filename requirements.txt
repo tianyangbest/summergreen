@@ -13,3 +13,4 @@ jqdatasdk==1.8.1
 psycopg2==2.8.6
 fastapi==0.61.1
 uvicorn==0.12.2
+pyarrow==0.15.0

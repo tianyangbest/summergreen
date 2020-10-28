@@ -4,9 +4,19 @@ services:
     build: .
     ports:
       - "8001:80"
+    volumes:
+    - /mnt/stock_data/summergreen/data/tick_day_parquet:/data/tick_day_parquet
+    - /mnt/stock_data/summergreen/log:/log
     environment:
       TZ: "Asia/Shanghai"
+    depends_on:
+      - "redis"
+      - "redis_k"
   redis:
     image: redis:6.0.8-alpine
     ports:
       - 8011:6379
+  redis_k:
+    image: redis:6.0.8-alpine
+    ports:
+      - 8012:6379

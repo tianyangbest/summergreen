@@ -81,7 +81,6 @@ class KOperator(LoggingMixin, BaseOperator):
         return self._stock_codes["stock"]
 
     def update_stock_codes_arr_dict(self, tmp_time: datetime.datetime):
-        self.log.info(f"从redis更新Tick数据，时间:{tmp_time}")
         if tmp_time <= self._last_update_time:
             raise ValueError(
                 f"tmp_time_stamp:{tmp_time} "
@@ -116,6 +115,7 @@ class KOperator(LoggingMixin, BaseOperator):
                 self._stock_codes_arr_dict[k] = tmp_arr
 
         self._last_update_time = tmp_time
+        self.log.info(f"从redis更新Tick数据，时间:{tmp_time}")
 
     def get_arr_by_time_code(
         self,

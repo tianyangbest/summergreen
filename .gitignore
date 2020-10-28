@@ -235,3 +235,4 @@ nohup.out
 *.ipynb
 /summergreen/config/
 !/summergreen/config/base_config.yml
+/logs/
