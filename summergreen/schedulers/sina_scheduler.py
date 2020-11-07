@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import datetime
+import itertools
 
+import pandas as pd
 import redis
 
 from summergreen import quotation
@@ -34,7 +36,7 @@ class SinaScheduler(BaseScheduler):
             "cron",
             hour="9-10,13-14",
             max_instances=10,
-            second="*/3",
+            second="*",
         )
         self._bs.add_job(
             self.snap2redis,
@@ -42,7 +44,7 @@ class SinaScheduler(BaseScheduler):
             hour="11",
             minute="0-31",
             max_instances=10,
-            second="*/3",
+            second="*",
         )
         self._bs.add_job(
             self.snap2redis,
@@ -50,8 +52,19 @@ class SinaScheduler(BaseScheduler):
             hour="15",
             minute="0-5",
             max_instances=10,
-            second="*/3",
+            second="*",
         )
+        self._bs.add_job(
+            self.redis2parquet,
+            "date",
+            run_date=self._today + datetime.timedelta(hours=15, minutes=11),
+            args=[
+                f"""{self._today_str}*""",
+                f"""{self._base_config['to_tick_day_parquet_dir']}/{self._today_str}.parquet""",
+            ],
+            misfire_grace_time=1 * 60 * 60,
+        )
+        self.log.info("K线数据调度今日调度已经初始化")
 
     def day_initialization(self):
         quotation.update_stock_codes()
@@ -71,3 +84,15 @@ class SinaScheduler(BaseScheduler):
             self.log.info("Tick数据更新到redis")
         except Exception as e:
             print(e)
+
+    def redis2parquet(self, match_time, to_path_dir):
+        redis_list = [
+            [[k] + [i] + v.split(",") for k, v in self._r.hgetall(i).items()]
+            for i in self._r.keys(match_time)
+        ]
+        redis_list = list(itertools.chain(*redis_list))
+        df = pd.DataFrame(redis_list)
+        df.columns = list(self._stock_config["tick_dtypes"].keys())
+        df = df.astype(self._stock_config["tick_dtypes"])
+        df = df.set_index(["code", "time"])
+        df.to_parquet(to_path_dir)

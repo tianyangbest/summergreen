@@ -16,7 +16,11 @@ services:
     image: redis:6.0.8-alpine
     ports:
       - 8011:6379
+    environment:
+      TZ: "Asia/Shanghai"
   redis_k:
     image: redis:6.0.8-alpine
     ports:
       - 8012:6379
+    environment:
+      TZ: "Asia/Shanghai"
