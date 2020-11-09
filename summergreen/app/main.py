@@ -12,9 +12,13 @@ joint_scheduler.start_now()
 fetcher_scheduler = SinaScheduler()
 fetcher_scheduler.start_now()
 
-# Redis数据存储同步到k_scheduler服务
-k_scheduler = KScheduler()
-k_scheduler.start_now()
+# Redis数据存储同步到k_scheduler服务，k数据每60秒一个bar，延迟1秒计算，每3秒更新一次
+k_scheduler_1st = KScheduler(60, 1, 3)
+k_scheduler_1st.start_now()
+
+# Redis数据存储同步到k_scheduler服务，k数据每60秒一个bar，延迟75秒计算，每60秒更新一次
+k_scheduler_2nd = KScheduler(60, 75, 60)
+k_scheduler_2nd.start_now()
 
 app = FastAPI()
 

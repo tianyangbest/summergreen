@@ -24,11 +24,11 @@ with open(
 
 
 def fix_redis_df_bug(original_df: pd.DataFrame):
-    original_df.columns = stock_config["tick_dtypes"].keys()[2:]
+    original_df.columns = list(stock_config["tick_dtypes"].keys())[2:]
     original_df = original_df.astype(
         {
             k: stock_config["tick_dtypes"][k]
-            for k in stock_config["tick_dtypes"].keys()[2:]
+            for k in list(stock_config["tick_dtypes"].keys())[2:]
         }
     )
     return original_df

@@ -56,8 +56,11 @@ class SinaScheduler(BaseScheduler):
         )
         self._bs.add_job(
             self.redis2parquet,
-            "date",
-            run_date=self._today + datetime.timedelta(hours=15, minutes=11),
+            "cron",
+            hour="15",
+            minute="15",
+            second="0",
+            max_instances=1,
             args=[
                 f"""{self._today_str}*""",
                 f"""{self._base_config['to_tick_day_parquet_dir']}/{self._today_str}.parquet""",
