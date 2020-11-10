@@ -66,7 +66,7 @@ class KScheduler(BaseScheduler):
             self._bs.add_job(
                 self._q.put,
                 "date",
-                run_date=k_end_time + datetime.timedelta(seconds=self._lag_seconds),
+                run_date=run_time,
                 args=[[self._ko.uptime_update2redis, k_start_time, k_end_time]],
                 misfire_grace_time=15 * 60 * 60,
             )

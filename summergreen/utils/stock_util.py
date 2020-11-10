@@ -107,3 +107,47 @@ def get_last_trade_date(dt):
     return df.loc[0]["trade_date"]
     # last_date = df.iloc[-1]["trade_date"]
     # return last_date
+
+
+def tick_df2k_df(tick_df: pd.DataFrame, interval_seconds, tick_date):
+    tick_date_str = str(tick_date)
+    last_trade_date = get_last_trade_date(tick_date_str)
+    print(last_trade_date)
+    base_postgres_engine = create_engine(base_config["base_postgres_engine_str"])
+    k_day_df = pd.read_sql_query(
+        f"""SELECT * FROM base_info.k_1day 
+        WHERE time = '{str(tick_date)}'""",
+        base_postgres_engine,
+    )
+    tick_df = (
+        tick_df[
+            (tick_df.current > 0)
+            & (tick_df.volume > 0)
+            & (
+                tick_df.index.get_level_values(1)
+                >= tick_date.replace(hour=9, minute=30)
+            )
+        ]
+        .sort_index()
+        .copy()
+    )
+    k_df = tick_df.groupby(
+        [
+            "code",
+            tick_df.index.get_level_values("time").to_period(
+                datetime.timedelta(seconds=interval_seconds)
+            ),
+        ]
+    ).agg(
+        open=("current", "first"),
+        close=("current", "last"),
+        high=("current", "max"),
+        low=("current", "min"),
+        volume=("volume", "last"),
+        money=("money", "last"),
+    )
+    k_df["volume"] = k_df.volume.diff().fillna(k_df.volume).astype(int)
+    k_df["money"] = k_df.money.diff().fillna(k_df.money)
+    k_df = k_df.reset_index()
+    k_df["time"] = k_df.time.astype(str)
+    return k_df

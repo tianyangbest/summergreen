@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import datetime
-import itertools
 
 import pandas as pd
 import redis
@@ -101,38 +100,3 @@ class KOperator(LoggingMixin, BaseOperator):
             self._last_k_end_time = k_end_time
             self.log.info("K数据更新了结束时间。")
         self.log.info(f"K数据更新到redis, 时间范围:{k_start_time}-{k_end_time}")
-
-
-def tick_df2k_df(tick_df: pd.DataFrame, interval_seconds, tick_date):
-    tick_df = (
-        tick_df[
-            (tick_df.current > 0)
-            & (tick_df.volume > 0)
-            & (
-                tick_df.index.get_level_values(1)
-                >= tick_date.replace(hour=9, minute=30)
-            )
-        ]
-        .sort_index()
-        .copy()
-    )
-    k_df = tick_df.groupby(
-        [
-            "code",
-            tick_df.index.get_level_values("time").to_period(
-                datetime.timedelta(seconds=interval_seconds)
-            ),
-        ]
-    ).agg(
-        open=("current", "first"),
-        close=("current", "last"),
-        high=("current", "max"),
-        low=("current", "min"),
-        volume=("volume", "last"),
-        money=("money", "last"),
-    )
-    k_df["volume"] = k_df.volume.diff().fillna(k_df.volume).astype(int)
-    k_df["money"] = k_df.money.diff().fillna(k_df.money)
-    k_df = k_df.reset_index()
-    k_df["time"] = k_df.time.astype(str)
-    return k_df

@@ -26,7 +26,7 @@ class SinaScheduler(BaseScheduler):
             self.day_initialization,
             "cron",
             hour="8",
-            minute="59",
+            minute="50",
             second="0",
             max_instances=1,
         )
@@ -89,12 +89,14 @@ class SinaScheduler(BaseScheduler):
             print(e)
 
     def redis2parquet(self, match_time, to_path_dir):
+        self.log.info(f"Redis Tick 转存到parquet, match_time= {match_time}")
         redis_list = [
             [[k] + [i] + v.split(",") for k, v in self._r.hgetall(i).items()]
             for i in self._r.keys(match_time)
         ]
         redis_list = list(itertools.chain(*redis_list))
         df = pd.DataFrame(redis_list)
+        self.log.info(f"{df.shape}")
         df.columns = list(self._stock_config["tick_dtypes"].keys())
         df = df.astype(self._stock_config["tick_dtypes"])
         df = df.set_index(["code", "time"])
