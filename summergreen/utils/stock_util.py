@@ -111,12 +111,12 @@ def get_last_trade_date(dt):
 
 def tick_df2k_df(tick_df: pd.DataFrame, interval_seconds, tick_date):
     tick_date_str = str(tick_date)
-    last_trade_date = get_last_trade_date(tick_date_str)
-    print(last_trade_date)
     base_postgres_engine = create_engine(base_config["base_postgres_engine_str"])
-    k_day_df = pd.read_sql_query(
-        f"""SELECT * FROM base_info.k_1day 
-        WHERE time = '{str(tick_date)}'""",
+    pre_close_k_day_df = pd.read_sql_query(
+        f"""SELECT code, close pre_close FROM
+        (SELECT code, close, time, ROW_NUMBER() OVER (PARTITION BY code ORDER BY time DESC) rn
+        FROM base_info.k_1day WHERE time < '{tick_date_str}') k
+        WHERE rn = 1""",
         base_postgres_engine,
     )
     tick_df = (
@@ -146,8 +146,10 @@ def tick_df2k_df(tick_df: pd.DataFrame, interval_seconds, tick_date):
         volume=("volume", "last"),
         money=("money", "last"),
     )
-    k_df["volume"] = k_df.volume.diff().fillna(k_df.volume).astype(int)
-    k_df["money"] = k_df.money.diff().fillna(k_df.money)
+    k_df["volume"] = k_df.groupby("code").volume.diff().fillna(k_df.volume).astype(int)
+    k_df["money"] = k_df.groupby("code").money.diff().fillna(k_df.money)
     k_df = k_df.reset_index()
     k_df["time"] = k_df.time.astype(str)
+    k_df = k_df.merge(pre_close_k_day_df, on="code", how="left")
+    k_df["pre_close"] = k_df.pre_close.fillna(k_df.open)
     return k_df

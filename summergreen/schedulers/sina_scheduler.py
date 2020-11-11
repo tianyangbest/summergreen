@@ -62,8 +62,8 @@ class SinaScheduler(BaseScheduler):
             second="0",
             max_instances=1,
             args=[
-                f"""{self._today_str}*""",
-                f"""{self._base_config['to_tick_day_parquet_dir']}/{self._today_str}.parquet""",
+                None,
+                self._base_config["to_tick_day_parquet_dir"],
             ],
             misfire_grace_time=1 * 60 * 60,
         )
@@ -89,6 +89,8 @@ class SinaScheduler(BaseScheduler):
             print(e)
 
     def redis2parquet(self, match_time, to_path_dir):
+        if match_time is None:
+            match_time = f"""{self._today_str}*"""
         self.log.info(f"Redis Tick 转存到parquet, match_time= {match_time}")
         redis_list = [
             [[k] + [i] + v.split(",") for k, v in self._r.hgetall(i).items()]
@@ -100,4 +102,4 @@ class SinaScheduler(BaseScheduler):
         df.columns = list(self._stock_config["tick_dtypes"].keys())
         df = df.astype(self._stock_config["tick_dtypes"])
         df = df.set_index(["code", "time"])
-        df.to_parquet(to_path_dir)
+        df.to_parquet(to_path_dir + f"""/{self._today_str}.parquet""")
