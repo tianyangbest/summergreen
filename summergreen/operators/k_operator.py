@@ -11,7 +11,12 @@ from summergreen.utils.time_util import get_all_timestamp_list
 
 
 class KOperator(LoggingMixin, BaseOperator):
-    def __init__(self):
+    def __init__(
+        self,
+        today_datetime=datetime.datetime.now().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ),
+    ):
         super().__init__()
         self._tr = redis.Redis(
             host=self._base_config["tick_redis_config"]["host"],
@@ -19,7 +24,7 @@ class KOperator(LoggingMixin, BaseOperator):
             db=self._base_config["tick_redis_config"]["db"],
             decode_responses=self._base_config["tick_redis_config"]["decode_responses"],
         )
-        self._k15r = redis.Redis(
+        self._kr = redis.Redis(
             host=self._base_config["k15s_redis_config"]["host"],
             port=self._base_config["k15s_redis_config"]["port"],
             db=self._base_config["k15s_redis_config"]["db"],
@@ -31,6 +36,20 @@ class KOperator(LoggingMixin, BaseOperator):
         self._last_k_end_time = datetime.datetime(1900, 1, 1)
         self._last_update_vm_codes_dict = {
             code: [0, 0, 0, 0, 0, 0] for code in self._stock_codes["stock"]
+        }
+        pre_close_k_day_df = pd.read_sql_query(
+            f"""SELECT code, close pre_close FROM
+            (SELECT code, close, time, ROW_NUMBER() OVER (PARTITION BY code ORDER BY time DESC) rn
+            FROM base_info.k_1day WHERE time < '{today_datetime}') k
+            WHERE rn = 1""",
+            self._base_postgres_engine,
+        )
+        self._pre_close_dict = pre_close_k_day_df.set_index("code")[
+            "pre_close"
+        ].to_dict()
+        self._pre_close_dict = {
+            **{code: 0 for code in self._stock_codes["stock"]},
+            **self._pre_close_dict,
         }
 
     def uptime_update2redis(self, k_start_time, k_end_time):
@@ -44,6 +63,7 @@ class KOperator(LoggingMixin, BaseOperator):
         tmp_k_codes_dict = {
             code: [0, 0, 0, 0, 0, 0] for code in self._stock_codes["stock"]
         }
+
         for t in timestamp_list:
             for k, v in self._tr.hgetall(str(t)).items():
                 v_list = [float(i) for i in v.split(",")]
@@ -72,7 +92,7 @@ class KOperator(LoggingMixin, BaseOperator):
                     # get last value for money
                     tmp_k_codes_dict[k][5] = v_list[4]
 
-        snap_pipe = self._k15r.pipeline()
+        snap_pipe = self._kr.pipeline()
         for k in tmp_k_codes_dict.keys():
             if tmp_k_codes_dict[k][4] > 0 and tmp_k_codes_dict[k][5] > 0:
                 volume_increased = (
@@ -88,7 +108,11 @@ class KOperator(LoggingMixin, BaseOperator):
                         [
                             str(i)
                             for i in tmp_k_codes_dict[k][:4]
-                            + [volume_increased, money_increased]
+                            + [
+                                volume_increased,
+                                money_increased,
+                                self._pre_close_dict[k],
+                            ]
                         ]
                     ),
                 )
