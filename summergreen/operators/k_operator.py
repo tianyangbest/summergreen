@@ -3,7 +3,7 @@ import datetime
 
 import pandas as pd
 import redis
-from sqlalchemy import create_engine
+
 
 from summergreen.operators.base_operator import BaseOperator
 from summergreen.utils.logging_mixin import LoggingMixin
@@ -30,9 +30,7 @@ class KOperator(LoggingMixin, BaseOperator):
             db=self._base_config["k15s_redis_config"]["db"],
             decode_responses=self._base_config["k15s_redis_config"]["decode_responses"],
         )
-        self._base_postgres_engine = create_engine(
-            self._base_config["base_postgres_engine_str"]
-        )
+
         self._last_k_end_time = datetime.datetime(1900, 1, 1)
         self._last_update_vm_codes_dict = {
             code: [0, 0, 0, 0, 0, 0] for code in self._stock_codes["stock"]

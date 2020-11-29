@@ -2,6 +2,7 @@
 import json
 import os
 import yaml
+from sqlalchemy import create_engine
 
 
 class BaseOperator:
@@ -20,3 +21,6 @@ class BaseOperator:
             f"""{os.path.dirname(os.path.dirname(__file__))}/quotation/stock_codes.conf"""
         ) as tmp_f:
             self._stock_codes = json.load(tmp_f)
+        self._base_postgres_engine = create_engine(
+            self._base_config["base_postgres_engine_str"]
+        )
