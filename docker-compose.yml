@@ -2,6 +2,7 @@ version: "3"
 services:
   joint_scheduler:
     build: .
+    restart: always
     ports:
       - "8001:80"
     volumes:
@@ -14,12 +15,14 @@ services:
       - "redis_k"
   redis:
     image: redis:6.0.8-alpine
+    restart: always
     ports:
       - 8011:6379
     environment:
       TZ: "Asia/Shanghai"
   redis_k:
     image: redis:6.0.8-alpine
+    restart: always
     ports:
       - 8012:6379
     environment:
