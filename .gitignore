@@ -236,3 +236,5 @@ nohup.out
 /summergreen/config/
 !/summergreen/config/base_config.yml
 /logs/
+/tmp_data/
+*.conf
