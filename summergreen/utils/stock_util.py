@@ -109,7 +109,7 @@ def get_last_trade_date(dt):
     # return last_date
 
 
-def tick_df2k_df(tick_df: pd.DataFrame, interval_seconds, tick_date):
+def tick_df2k_df(tick_df: pd.DataFrame, interval_freq, tick_date):
     tick_date_str = str(tick_date)
     base_postgres_engine = create_engine(base_config["base_postgres_engine_str"])
     pre_close_k_day_df = pd.read_sql_query(
@@ -118,6 +118,9 @@ def tick_df2k_df(tick_df: pd.DataFrame, interval_seconds, tick_date):
         FROM base_info.k_1day WHERE time < '{tick_date_str}') k
         WHERE rn = 1""",
         base_postgres_engine,
+    )
+    tick_df.index = tick_df.index.set_levels(
+        tick_df.index.levels[1].astype("datetime64[ns]"), level=1
     )
     tick_df = (
         tick_df[
@@ -131,14 +134,8 @@ def tick_df2k_df(tick_df: pd.DataFrame, interval_seconds, tick_date):
         .sort_index()
         .copy()
     )
-    k_df = tick_df.groupby(
-        [
-            "code",
-            tick_df.index.get_level_values("time").to_period(
-                datetime.timedelta(seconds=interval_seconds)
-            ),
-        ]
-    ).agg(
+
+    k_df = tick_df.groupby(["code", pd.Grouper(level=1, freq=interval_freq)]).agg(
         open=("current", "first"),
         close=("current", "last"),
         high=("current", "max"),
