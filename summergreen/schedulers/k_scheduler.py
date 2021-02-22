@@ -65,7 +65,11 @@ class KScheduler(BaseScheduler):
         self._ko.__init__(self._today_datetime)
         for t in get_all_timestamp_list(
             self._today_datetime + datetime.timedelta(hours=9, minutes=30),
-            self._today_datetime + datetime.timedelta(hours=15, minutes=10),
+            self._today_datetime + datetime.timedelta(hours=11, minutes=30),
+            self._frequency_seconds,
+        ) + get_all_timestamp_list(
+            self._today_datetime + datetime.timedelta(hours=13),
+            self._today_datetime + datetime.timedelta(hours=15),
             self._frequency_seconds,
         ):
             k_start_time = datetime.datetime.fromtimestamp(

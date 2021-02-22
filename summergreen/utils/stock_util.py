@@ -52,9 +52,9 @@ def concat_joint_parquet_list(one_day_parquet_path_list):
         blocksize=None,
         dtype=joint_stock_config,
         parse_dates=["time"],
-    ).compute()
+    ).compute(scheduler="multiprocessing")
     df = df[stock_config["tick_dtypes"].keys()]
-    df = df.set_index(["code", "time"], drop=True)
+    df = df.set_index(["code", "time"], drop=True).sort_index()
     return df
 
 
@@ -132,8 +132,21 @@ def tick_df2k_df(tick_df: pd.DataFrame, interval_freq, tick_date):
             )
         ]
         .sort_index()
-        .copy()
+        .reset_index()
     )
+    tick_df["time"] = tick_df.time.map(
+        lambda x: tick_date.replace(hour=11, minute=30, second=0)
+        if tick_date.replace(hour=11, minute=30, second=0)
+        < x
+        < tick_date.replace(hour=1, minute=0, second=0)
+        else x
+    )
+    tick_df["time"] = tick_df.time.map(
+        lambda x: tick_date.replace(hour=15, minute=0, second=0)
+        if x > tick_date.replace(hour=15, minute=0, second=0)
+        else x
+    )
+    tick_df = tick_df.set_index(["code", "time"]).copy()
 
     k_df = tick_df.groupby(["code", pd.Grouper(level=1, freq=interval_freq)]).agg(
         open=("current", "first"),
