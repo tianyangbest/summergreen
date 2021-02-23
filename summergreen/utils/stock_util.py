@@ -138,7 +138,7 @@ def tick_df2k_df(tick_df: pd.DataFrame, interval_freq, tick_date):
         lambda x: tick_date.replace(hour=11, minute=30, second=0)
         if tick_date.replace(hour=11, minute=30, second=0)
         < x
-        < tick_date.replace(hour=1, minute=0, second=0)
+        < tick_date.replace(hour=13, minute=0, second=0)
         else x
     )
     tick_df["time"] = tick_df.time.map(
